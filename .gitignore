@@ -1,3 +1,5 @@
 ./latex/main.pdf
 ./latex/main.log
 ./latex/main.aux
+./latex/main.bbl
+./latex/main.blg
