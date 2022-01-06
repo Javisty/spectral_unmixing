@@ -40,7 +40,13 @@ Hyperspectral Unmixing, Spectral Unmixing, Alternating Minimization, Proximal
 \end{IEEEkeywords}
 
 \section{Introduction}
+In many real-world applications like space exploration, medicine, environment monitoring, mineral detection, hyperspectral images (HI) (consisting of samples of electromagnetic spectra at various wavelengths) can put into evidence some key characteristics of the location monitored. In particular, it is commonly supposed that each present EM have its own signature spectrum, which contributes to the HI depending on its abundance in each pixel. Hence, being able to unmix these characteristic signatures from HI leads to a precise detection of materials in a scene.
 
+However, despite the high spectral resolution of hyperspectral cameras, there are technical limits that must be taken into account; in particular low spatial resolution is to be expected, which leads to a mixture of EMs in each piel. While many unmixing algorithms already have been proposed, the physics behind is often too complex to be fully modelled.
+
+A first difficulty to handle is the SV: depending on the scene observed, an EM might have a different signature than what we were expecting from previous observations. This variability can even occurs locally, between pixels of a same HI, which actually question the hypothesis of one signature corresponding to one EM, rather than a class of signatures. Multiple factors can contribute to this variability, and we distinguish two kinds: intrisic and external. Intrisic variability is due to the physical differences of the EM samples across the HI (e.g. grass is greener on the other side because the neighbor water it) while external variability refers to the environment influence, like light and shade or the quality of the hyperspectral camera used.
+
+In the end, the unmixing problem is a very complex one, and requires advanced technics to overcome the difficulties. We will present some of them in the following section.
 \section{Related work}
 \subsection{Linear models}
 
