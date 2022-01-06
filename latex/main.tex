@@ -1,12 +1,17 @@
 \documentclass[conference]{IEEEtran}
 \IEEEoverridecommandlockouts
 % The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+
 \usepackage{cite}
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{algorithmic}
 \usepackage{graphicx}
 \usepackage{textcomp}
 \usepackage{xcolor}
+
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 \begin{document}
@@ -60,7 +65,25 @@ In the end, the unmixing problem is a very complex one, and requires advanced te
 Present~\cite{janiczek_differentiable_2020} work and model.
 
 \section{Alternating minimization with proximal operators}
-Present our unmixing algorithm.
+\subsection{General unmixing problem}
+
+While the previous model gives good results, some choices for the optimization part are questionable. So we decided to reuse the dispersion model introduced in another optimization framework, that hopefully will yield better results. In this section is introduced the general unmixing problem to solve.
+
+The main improvements we wanted to add were intrisic variability and spatial constraints (controlled variation of parameters and abundances through the HI) and a better minimization approach than the analysis-by-synthesis with Linear Unmixing.
+
+We consider a HI $B \in \mathbb{R}^{N \times M \times S}$ consisting of $N \times M = \Pi$ pixels, each pixel giving a spectrum evalutated at wavelenghts $w_1,\dots, w_S$. We assume that there are $P$ EMs in the HI, characterized by sets of parameters $\theta_1,\dots, \theta_P$. As we put ourselves in the dispersion model, each $\theta_p \in \mathbb{R}^{N \times M \times K \times 4}$ actually corresponds to the parameters $\rho, \omega_0, \gamma, \epsilon_r$ introduced in the previous section, with different values between pixels. Then, we define the matrix of abundances $A \in \mathbb{\[0, 1\]}^{N \times M\times P}$ such that $a_{i, j, p}$ corresponds to the abundance of EM $p$ in pixel $(i, j)$, and $\|A_{i, j, 1:P}\|_1 = 1$. Finally, $E(\theta_1,\dots, \theta_P) = E(\Theta) \in \mathbb{R}^{N \times M \times P \times S}$ gives the reference spectrum of each EM at each pixel, derived from the dispersion model: $E(\Theta)_{i, j, p, s} = \epsilon(\theta_{i, j, p}; w_s)$.
+
+The problem we want to solve is the following:
+\begin{equation}
+  \argmin_{\Theta \in \mathbb{R}^{\Pi \times P \times K \times 4}, A \in \mathbb{R}^{\Pi \times P}} H(\Theta, A) + f(\Theta) + g(A)
+\end{equation}
+such that $A \geq 0, \|A_{i, j, 1:P}\|_1 = 1$ for all $1\leq i \leq N, 1\leq j \leq M$, 
+
+with $H(\Theta, A) = \frac{1}{2} \|B - E(\Theta) \cdot A\|_{F, 2}^2$ and $f$ and $g$ are regularization functions detailled in next subsections. The norm defined by $\|Q\|_{F, 2} = \sqrt{\sum_{1 \leq i \leq N,\\1 \leq j \leq M} \|Q_{i, j, 1:S}\|_2^2}$ is the Froebenius norm applied on the square norm over spectrum for every pixel.
+
+\subsection{Regularization on the model parameters}
+
+\subsection{Regularization on the abundances}
 
 \section{Experimentations}
 
