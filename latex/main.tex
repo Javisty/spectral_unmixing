@@ -71,10 +71,11 @@ While the previous model gives good results, some choices for the optimization p
 
 The main improvements we wanted to add were intrisic variability and spatial constraints (controlled variation of parameters and abundances through the HI) and a better minimization approach than the analysis-by-synthesis with Linear Unmixing.
 
-We consider a HI $B \in \mathbb{R}^{N \times M \times S}$ consisting of $N \times M = \Pi$ pixels, each pixel giving a spectrum evalutated at wavelenghts $w_1,\dots, w_S$. We assume that there are $P$ EMs in the HI, characterized by sets of parameters $\theta_1,\dots, \theta_P$. As we put ourselves in the dispersion model, each $\theta_p \in \mathbb{R}^{N \times M \times K \times 4}$ actually corresponds to the parameters $\rho, \omega_0, \gamma, \epsilon_r$ introduced in the previous section, with different values between pixels. Then, we define the matrix of abundances $A \in \mathbb{\[0, 1\]}^{N \times M\times P}$ such that $a_{i, j, p}$ corresponds to the abundance of EM $p$ in pixel $(i, j)$, and $\|A_{i, j, 1:P}\|_1 = 1$. Finally, $E(\theta_1,\dots, \theta_P) = E(\Theta) \in \mathbb{R}^{N \times M \times P \times S}$ gives the reference spectrum of each EM at each pixel, derived from the dispersion model: $E(\Theta)_{i, j, p, s} = \epsilon(\theta_{i, j, p}; w_s)$.
+We consider a HI $B \in \mathbb{R}^{N \times M \times S}$ consisting of $N \times M = \Pi$ pixels, each pixel giving a spectrum evalutated at wavelenghts $w_1,\dots, w_S$. We assume that there are $P$ EMs in the HI, characterized by sets of parameters $\theta_1,\dots, \theta_P$. As we put ourselves in the dispersion model, each $\theta_p \in \mathbb{R}^{N \times M \times K \times 4}$ actually corresponds to the parameters $\rho, \omega_0, \gamma, \epsilon_r$ introduced in the previous section, with different values between pixels. Then, we define the matrix of abundances $A \in [0, 1]^{N \times M\times P}$ such that $a_{i, j, p}$ corresponds to the abundance of EM $p$ in pixel $(i, j)$, and $\|A_{i, j, 1:P}\|_1 = 1$. Finally, $E(\theta_1,\dots, \theta_P) = E(\Theta) \in \mathbb{R}^{N \times M \times P \times S}$ gives the reference spectrum of each EM at each pixel, derived from the dispersion model: $E(\Theta)_{i, j, p, s} = \epsilon(\theta_{i, j, p}; w_s)$.
 
 The problem we want to solve is the following:
 \begin{equation}
+  \label{eq:gen}
   \argmin_{\Theta \in \mathbb{R}^{\Pi \times P \times K \times 4}, A \in \mathbb{R}^{\Pi \times P}} H(\Theta, A) + f(\Theta) + g(A)
 \end{equation}
 such that $A \geq 0, \|A_{i, j, 1:P}\|_1 = 1$ for all $1\leq i \leq N, 1\leq j \leq M$, 
@@ -82,8 +83,14 @@ such that $A \geq 0, \|A_{i, j, 1:P}\|_1 = 1$ for all $1\leq i \leq N, 1\leq j \
 with $H(\Theta, A) = \frac{1}{2} \|B - E(\Theta) \cdot A\|_{F, 2}^2$ and $f$ and $g$ are regularization functions detailled in next subsections. The norm defined by $\|Q\|_{F, 2} = \sqrt{\sum_{1 \leq i \leq N,\\1 \leq j \leq M} \|Q_{i, j, 1:S}\|_2^2}$ is the Froebenius norm applied on the square norm over spectrum for every pixel.
 
 \subsection{Regularization on the model parameters}
+We would like to enforce spatial regularization on $\Theta$, to represent the idea that, as the environmental conditions are roughly continuous through space, so are material states. For instance, the quantity of water received by a lawn is close to the one received by the adjacent grass. Obviously, this hypothesis is not always appropriate, as your neighbor might water his lawn way much than you; but it should still be a relevant hypothesis in many applications.
+
+$$f(\Theta) = \alpha TV(E(\Theta))$$ for some regularization term $\alpha \geq 0$, and $TV$ refers to the \emph{Total Variation} measure applied for each EM.
 
 \subsection{Regularization on the abundances}
+Regarding the abundances, for optimization we will actually include the constraints of \ref{eq:gen} in the regularization term. In addition to, we which to enforce sparsity of abundances in every pixel; we would rather have a few EMs in significant abundances than lot of EMs in small quantities. As well, we want to ensure that abundances aren't varying too abruptly through the HI, so we introduce a spatial regularization term.
+
+$g(A) = \iota_\Upsilon(A) + \frac{\beta}{2} \|DA\|_F^2 + \gamma \| A \|_{F, p/q}$ where $\iota_\Upsilon (A) = \begin{cases} 0 \text{ if A}\in \Upsilon\\ +\infty \text{ otherwise} \end{cases}$ is the indicator operator for $\Upsilon = \{Q \in \mathbb{R}^{\Pi \times P}\, |\, 0 \leq Q \leq 1,\, \forall 1 \leq i \leq N, 1 \leq j \leq M, \| Q_{i, j, 1:P} \|_1 = 1\}$, $D$ is the gradient operator that gives the spatial regularization, and $\| \cdot \|_{F, p/q}$ is the Froebenius norm applied to the sparse $\ell_p/\ell_q$ norm over the abundances in every pixel.
 
 \section{Experimentations}
 
