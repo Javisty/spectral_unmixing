@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "spectral_unmixing"
+version = "0.1.0"
+description = "Unmixing of spectral images, using a dispersion model"
+authors = ["Javisty <aymec.78620@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = ">=3.7,<3.8"
+torch = "^1.10.2"
+torchvision = "^0.11.3"
+torchaudio = "^0.10.2"
+scipy = "^1.7.3"
+h5py = "<3.0.0"
+matplotlib = "^3.5.1"
+pandas = "<1.4.0"
+torchviz = "^0.0.2"
+pytest = "^6.2.5"
+
+[tool.poetry.dev-dependencies]
+#InfraRender = {git = "https://github.com/johnjaniczek/InfraRender.git"}
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+testpaths = [
+    "tests"
+]
