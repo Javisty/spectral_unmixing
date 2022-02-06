@@ -39,6 +39,7 @@ class DispersionRegularization(nn.Module):
 class SPOQ(nn.Module):
     """
     Pseudo-norm SPOQ.
+
     See paper DOI:10.1109/TSP.2020.3025731 (Cherni 2020)
     """
 
@@ -80,6 +81,7 @@ class LogBarrierExtensionAbundances(nn.Module):
 def log_barrier_extension(z, t):
     """
     Log-barrier extension function applied on z for parameter t.
+
     See paper arXiv:1904.04205v4 (Kervadec 2020)
     """
     pass
