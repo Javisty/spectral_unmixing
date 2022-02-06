@@ -1,5 +1,7 @@
 .pytest_cache/
+**__pycache__/
 poetry.lock
+*.ipynb
 
 ### Emacs ###
 # -*- mode: gitignore; -*-

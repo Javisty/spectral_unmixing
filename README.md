@@ -10,7 +10,7 @@ The project uses the [InfraRender](https://github.com/johnjaniczek/InfraRender) 
 
 Every `import` statement in the ___init.py___ files of the InfraRender folder should be relative (e.g. `from analysis_by_synthesis import ...` -> `from .analysis_by_synthesis import ...`).
 
-`pytest` is the utility chosen to test the integrity of the package. You can run it by starting `pytest` from the root directory of the project.
+`pytest` is the utility chosen to test the integrity of the package. You can run it with `python -m pytest tests/` from the root directory of the project.
 
 ## Code structure
 
