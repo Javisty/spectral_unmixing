@@ -89,4 +89,23 @@ def log_barrier_extension(z, t):
 
 def smoothing(theta):
     """Compute the pseudo-TV smoothing term for parameters theta."""
-    pass
+    S = theta.size()
+
+    h_diff = theta[:, 1:, :, :] - theta[:, :-1, :, :]
+    v_diff = theta[1:, :, :, :] - theta[:-1, :, :, :]
+
+    # Pad with zeros to restore dimension
+    h_diff = torch.cat((h_diff, torch.zeros((S[0], 1, S[2], S[3]))), dim=1)
+    v_diff = torch.cat((v_diff, torch.zeros((1, S[1], S[2], S[3]))), dim=0)
+
+    return torch.sum(norm_1_2(h_diff, v_diff, dim=(0, 1))**2)
+
+
+def norm_1_2(A, B, **kwargs):
+    """Compute the 1,2-norm for matrices A and B.
+
+    See paper DOI:10.1109/LSP.2014.2322123 (Condat 2014), section III.A
+    """
+    if A.size() != B.size():
+        raise AttributeError("Tensors should have same size")
+    return torch.sum(torch.sqrt(A**2 + B**2), **kwargs)
