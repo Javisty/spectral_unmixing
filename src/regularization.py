@@ -59,7 +59,8 @@ class SPOQ(nn.Module):
 
 class LogBarrierExtensionAbundances(nn.Module):
     """
-    Log-barrier Extension applied to abundances constraints
+    Log-barrier Extension applied to abundances constraints.
+
     See paper arXiv:1904.04205v4 (Kervadec 2020)
     """
 
@@ -68,6 +69,10 @@ class LogBarrierExtensionAbundances(nn.Module):
         super().__init__()
         self.t = t
 
+    def log_barrier_extension(self, z):
+        """Apply log-barrier extension function with parameter self.t."""
+        return log_barrier_extension(z, self.t)
+
     def forward(self, A):
         """
         Return the penalty term for the abundances constraints on A.
@@ -75,7 +80,15 @@ class LogBarrierExtensionAbundances(nn.Module):
         Constraints are: elements between 0 and 1, elements on last
         dimension sum to 1
         """
-        pass
+        # Penalty term for positive coefficients
+        positive = torch.sum(self.log_barrier_extension(-A))
+
+        # Penalty term for sum >= 1 over last axis
+        gt_1 = torch.sum(self.log_barrier_extension(torch.sum(A, dim=-1) - 1))
+        # Penalty term for sum <= 1 over last axis
+        lt_1 = torch.sum(self.log_barrier_extension(1 - torch.sum(A, dim=-1)))
+
+        return positive + lt_1 + gt_1
 
 
 def log_barrier_extension(z, t):
@@ -84,7 +97,9 @@ def log_barrier_extension(z, t):
 
     See paper arXiv:1904.04205v4 (Kervadec 2020)
     """
-    pass
+    return torch.where(z <= -1/t**2,
+                       -np.log(-z) / t,
+                       t * z - np.log(1/t**2)/t + 1/t)
 
 
 def smoothing(theta):
