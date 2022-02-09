@@ -7,7 +7,10 @@ import numpy as np
 class AbundanceRegularization(nn.Module):
     """Regularization on abundances."""
 
-    def __init__(self, t_barrier, spoq_params, sparsity_penalty):
+    def __init__(self,
+                 t_barrier=5,
+                 spoq_params=(0.25, 2, 7e-7, 3e-3, 0.1),
+                 sparsity_penalty=1e-2):
         """
         t_barrier: parameter to define the log-barrier function.
         spoq_params: (p, q, alpha, beta, eta) the tuple of parameters defining
@@ -15,13 +18,13 @@ class AbundanceRegularization(nn.Module):
         sparsity_penalty: penalty on the sparsity term
         """
         super().__init__()
-        self.t = t_barrier
-        self.spoqs = spoq_params
+        self.barrier = LogBarrierExtensionAbundances(t_barrier)
+        self.spoq = SPOQ(*spoq_params)
         self.delta = sparsity_penalty
 
     def forward(self, A):
         """Return the regularization term for abundances A."""
-        pass
+        return self.barrier.forward(A) + self.delta * self.spoq.forward(A)
 
 
 class DispersionRegularization(nn.Module):
