@@ -5,7 +5,8 @@ import pytest
 from src.regularization import (norm_1_2,
                                 smoothing,
                                 log_barrier_extension,
-                                LogBarrierExtensionAbundances)
+                                LogBarrierExtensionAbundances,
+                                SPOQ)
 
 
 def test_norm_1_2():
@@ -21,7 +22,7 @@ def test_smoothing():
     assert smoothing(theta) == pytest.approx(3*2*(3 + np.sqrt(5))**2)
 
 
-class TestLogBarrierExtension():
+class TestLogBarrierExtension:
     def test_left_part(self):
         res = log_barrier_extension(torch.tensor(-0.5), torch.tensor(2))
         assert res == pytest.approx(-np.log(0.5)/2)
@@ -35,3 +36,23 @@ class TestLogBarrierExtension():
         A = torch.tensor([[[1/3, 1/3, 1/3], [1, 1, -1], [0.5, 0.5, 1]]])
         res = LogBarrierExtensionAbundances(1).forward(A)
         assert res == pytest.approx((2 + 1 + 1) + (2 + 1 + 1) + (1 + 0 + 2))
+
+
+class TestSPOQ:
+    def test_l_p_alpha(self):
+        spoq = SPOQ(1/2, 2, 0.0000001, 0.003, 0.1)
+        A = torch.zeros((2, 1, 5))
+        res = spoq.l_p_alpha(A)
+        assert res == pytest.approx(0.) and res.dim() == 2
+
+    def test_l_q_eta(self):
+        spoq = SPOQ(1/2, 2, 0.0000001, 0.003, 0.1)
+        A = torch.zeros((2, 1, 5))
+        res = spoq.l_q_eta(A)
+        assert res == pytest.approx(spoq.eta) and res.dim() == 2
+
+    def test_spoq(self):
+        spoq = SPOQ(1/2, 2, 0.0000001, 0.003, 0.1)
+        A = torch.zeros((2, 1, 5))
+        expected = 2 * 1 * np.log(spoq.beta / spoq.eta)
+        assert spoq.forward(A) == pytest.approx(expected)

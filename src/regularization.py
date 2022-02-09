@@ -45,16 +45,29 @@ class SPOQ(nn.Module):
 
     def __init__(self, p, q, alpha, beta, eta):
         """Parameters for the pseudo-norm."""
-        super().__init()
+        super().__init__()
         self.p = p
         self.q = q
         self.alpha = alpha
         self.beta = beta
         self.eta = eta
 
+    def l_p_alpha(self, A):
+        """First quasi-norm approx to the power p."""
+        p, alph = self.p, self.alpha
+        return torch.sum((A**2 + alph**2)**(p/2) - alph**p, dim=-1)
+
+    def l_q_eta(self, A):
+        """Second quasi-norm approx."""
+        q, eta = self.q, self.eta
+        return (eta**q + torch.sum(torch.abs(A)**q, dim=-1))**(1/q)
+
     def forward(self, A):
-        """Return the pseudo-norm for A."""
-        pass
+        """Return the SPOQ pseudo-norm for A."""
+        p, beta = self.p, self.beta
+        l_p_a = self.l_p_alpha(A)
+        l_q_n = self.l_q_eta(A)
+        return torch.sum(torch.log(((l_p_a + beta**p)**(1/p))/l_q_n))
 
 
 class LogBarrierExtensionAbundances(nn.Module):
