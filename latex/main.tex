@@ -85,12 +85,12 @@ with $H(\Theta, A) = \frac{1}{2} \|B - E(\Theta) \cdot A\|_{F, 2}^2$ and $f$ and
 \subsection{Regularization on the model parameters}
 We would like to enforce spatial regularization on $\Theta$, to represent the idea that, as the environmental conditions are roughly continuous through space, so are material states. For instance, the quantity of water received by a lawn is close to the one received by the adjacent grass. Obviously, this hypothesis is not always appropriate, as your neighbor might water his lawn way much than you; but it should still be a relevant hypothesis in many applications.
 
-$$f(\Theta) = \alpha TV(E(\Theta))$$ for some regularization term $\alpha \geq 0$, and $TV$ refers to the \emph{Total Variation} measure applied for each EM.
+$$f(\Theta) = \gamma \mathcal{L}(E(\Theta))$$ for some regularization term $\gamma \geq 0$, and $\mathcal{L}$ refers to a smoothing operator, directly inspired by the \emph{Total Variation} measure, applied for each EM.
 
 \subsection{Regularization on the abundances}
 Regarding the abundances, for optimization we will actually include the constraints of \ref{eq:gen} in the regularization term. In addition to, we which to enforce sparsity of abundances in every pixel; we would rather have a few EMs in significant abundances than lot of EMs in small quantities. As well, we want to ensure that abundances aren't varying too abruptly through the HI, so we introduce a spatial regularization term.
 
-$g(A) = \iota_\Upsilon(A) + \frac{\beta}{2} \|DA\|_F^2 + \gamma \| A \|_{F, p/q}$ where $\iota_\Upsilon (A) = \begin{cases} 0 \text{ if A}\in \Upsilon\\ +\infty \text{ otherwise} \end{cases}$ is the indicator operator for $\Upsilon = \{Q \in \mathbb{R}^{\Pi \times P}\, |\, 0 \leq Q \leq 1,\, \forall 1 \leq i \leq N, 1 \leq j \leq M, \| Q_{i, j, 1:P} \|_1 = 1\}$, $D$ is the gradient operator that gives the spatial regularization, and $\| \cdot \|_{F, p/q}$ is the Froebenius norm applied to the sparse $\ell_p/\ell_q$ norm over the abundances in every pixel.
+$g(A) = \iota_\Upsilon(A) + \delta \| \Psi(A) \|_{1}$ where $\iota_\Upsilon (A) = \begin{cases} 0 \text{ if A}\in \Upsilon\\ +\infty \text{ otherwise} \end{cases}$ is the indicator operator for $\Upsilon = \{Q \in \mathbb{R}^{\Pi \times P}\, |\, 0 \leq Q \leq 1,\, \forall 1 \leq i \leq N, 1 \leq j \leq M, \| Q_{i, j, 1:P} \|_1 = 1\}$, and $\| \Psi(\cdot) \|_{1}$ is the $\ell_1$ norm applied to the $N \times M$ matrix obtained by applying the SPOQ pseudo-norm over the abundances, in every pixel.
 
 \section{Experimentations}
 
