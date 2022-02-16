@@ -45,29 +45,47 @@ Hyperspectral Unmixing, Spectral Unmixing, Alternating Minimization, Proximal
 \end{IEEEkeywords}
 
 \section{Introduction}
-In many real-world applications like space exploration, medicine, environment monitoring, mineral detection, hyperspectral images (HI) (consisting of samples of electromagnetic spectra at various wavelengths) can put into evidence some key characteristics of the location monitored. In particular, it is commonly supposed that each present EM have its own signature spectrum, which contributes to the HI depending on its abundance in each pixel. Hence, being able to unmix these characteristic signatures from HI leads to a precise detection of materials in a scene.
+\textbf{Context:} what is spectral unmixing, some applications (remote sensing)\\
+\textbf{Variability models:} quick description of explicit (additive/multiplicative), black-box (Deep) and physical models.\\
+\textbf{Contribution:} take advantage of the dispersion model, with more prior information (regularization) than in Janiczek paper to obtain a more relevant model, while keeping a differentiable problem for an easier resolve (cf physical model is ugly).\\
+
+\textbf{First draft:} In many real-world applications like space exploration, medicine, environment monitoring, mineral detection, hyperspectral images (HI) (consisting of samples of electromagnetic spectra at various wavelengths) can put into evidence some key characteristics of the location monitored. In particular, it is commonly supposed that each present EM have its own signature spectrum, which contributes to the HI depending on its abundance in each pixel. Hence, being able to unmix these characteristic signatures from HI leads to a precise detection of materials in a scene.
 
 However, despite the high spectral resolution of hyperspectral cameras, there are technical limits that must be taken into account; in particular low spatial resolution is to be expected, which leads to a mixture of EMs in each piel. While many unmixing algorithms already have been proposed, the physics behind is often too complex to be fully modelled.
 
 A first difficulty to handle is the SV: depending on the scene observed, an EM might have a different signature than what we were expecting from previous observations. This variability can even occurs locally, between pixels of a same HI, which actually question the hypothesis of one signature corresponding to one EM, rather than a class of signatures. Multiple factors can contribute to this variability, and we distinguish two kinds: intrisic and external. Intrisic variability is due to the physical differences of the EM samples across the HI (e.g. grass is greener on the other side because the neighbor water it) while external variability refers to the environment influence, like light and shade or the quality of the hyperspectral camera used.
 
 In the end, the unmixing problem is a very complex one, and requires advanced technics to overcome the difficulties. We will present some of them in the following section.
-\section{Related work}
-\subsection{Linear models}
 
-\subsection{Spectral variability}
+\section{Variability models}
+Review of the literature.
 
-\subsection{Unsupervised unmixing}
+\subsection{Explicit models}
+Learn variability from an a priori structure. Borsoi 2020
 
-\subsection{Alternating minimization, proximal operators}
+\subsection{Deep models}
+Learn variability model directly from data, using deep structures. Borsoi 2019 (generative), Hong 2021, Ozkan 2019 (convolution)
 
-\section{Dispersion model}
-Present~\cite{janiczek_differentiable_2020} work and model.
+\subsection{Physical models}
+Rely on physical properties to infer (complex) models of variability. Try to keep it differentiable. Janiczek 2020.
 
-\section{Alternating minimization with proximal operators}
-\subsection{General unmixing problem}
 
-While the previous model gives good results, some choices for the optimization part are questionable. So we decided to reuse the dispersion model introduced in another optimization framework, that hopefully will yield better results. In this section is introduced the general unmixing problem to solve.
+\section{Problem statement}
+Formulate the optimization problem at hand.
+
+\subsection{Dispersion model}
+Recall and detail the dispersion model, rewrite it with our notations.
+
+\subsection{Sparsity and smoothness priors}
+Justify sparsity and smoothness for abundances and parameters/spectra from applications. Remind we want to remain differentiable. Present and justify the regularization terms chosen.
+
+\subsection{Constraints}
+Obvious constraints for abundances, constraints for parameters taken from Janiczek. For the sake of differentiability and smooth optimization, we relax constraints as penalty terms. Present and justify the choices.
+
+\subsection{Optimization problem}
+Wrap up: write the ideal problem statement, then rewrite it with the relaxation proposed. Highlight differentiability and smoothness.\\
+
+\textbf{Elements for the whole section:} While the previous model gives good results, some choices for the optimization part are questionable. So we decided to reuse the dispersion model introduced in another optimization framework, that hopefully will yield better results. In this section is introduced the general unmixing problem to solve.
 
 The main improvements we wanted to add were intrisic variability and spatial constraints (controlled variation of parameters and abundances through the HI) and a better minimization approach than the analysis-by-synthesis with Linear Unmixing.
 
@@ -82,25 +100,41 @@ such that $A \geq 0, \|A_{i, j, 1:P}\|_1 = 1$ for all $1\leq i \leq N, 1\leq j \
 
 with $H(\Theta, A) = \frac{1}{2} \|B - E(\Theta) \cdot A\|_{F, 2}^2$ and $f$ and $g$ are regularization functions detailled in next subsections. The norm defined by $\|Q\|_{F, 2} = \sqrt{\sum_{1 \leq i \leq N,\\1 \leq j \leq M} \|Q_{i, j, 1:S}\|_2^2}$ is the Froebenius norm applied on the square norm over spectrum for every pixel.
 
-\subsection{Regularization on the model parameters}
 We would like to enforce spatial regularization on $\Theta$, to represent the idea that, as the environmental conditions are roughly continuous through space, so are material states. For instance, the quantity of water received by a lawn is close to the one received by the adjacent grass. Obviously, this hypothesis is not always appropriate, as your neighbor might water his lawn way much than you; but it should still be a relevant hypothesis in many applications.
 
 $$f(\Theta) = \gamma \mathcal{L}(E(\Theta))$$ for some regularization term $\gamma \geq 0$, and $\mathcal{L}$ refers to a smoothing operator, directly inspired by the \emph{Total Variation} measure, applied for each EM.
 
-\subsection{Regularization on the abundances}
 Regarding the abundances, for optimization we will actually include the constraints of \ref{eq:gen} in the regularization term. In addition to, we which to enforce sparsity of abundances in every pixel; we would rather have a few EMs in significant abundances than lot of EMs in small quantities. As well, we want to ensure that abundances aren't varying too abruptly through the HI, so we introduce a spatial regularization term.
 
 $g(A) = \iota_\Upsilon(A) + \delta \| \Psi(A) \|_{1}$ where $\iota_\Upsilon (A) = \begin{cases} 0 \text{ if A}\in \Upsilon\\ +\infty \text{ otherwise} \end{cases}$ is the indicator operator for $\Upsilon = \{Q \in \mathbb{R}^{\Pi \times P}\, |\, 0 \leq Q \leq 1,\, \forall 1 \leq i \leq N, 1 \leq j \leq M, \| Q_{i, j, 1:P} \|_1 = 1\}$, and $\| \Psi(\cdot) \|_{1}$ is the $\ell_1$ norm applied to the $N \times M$ matrix obtained by applying the SPOQ pseudo-norm over the abundances, in every pixel.
 
-\section{Experimentations}
+
+\section{Inference algorithm}
+Detail difficulties encountered to solve the first version of the problem, and the leads found (Alternating minimization, PALM, bundle algorithms...). Present and justify the algorithm used to solve the problem (SGD, Adam, Autodiff PyTorch). Mention Adam-like algorithms for non-convex optimization, that would have been better with more time for implementation. Compare to Janiczek approach.
+
+\section{Experiments}
+\subsection{Experimental settings}
+\textbf{Datasets:} Describe datasets used for evaluation of the algorithm. Compare with the ones from Janiczek paper.
+
+\textbf{Evaluation criteria:} RMSE, ASAM, MSE for abundances (per EM and for all), reconstruction error $H(\Theta, A)$. Compare with Janiczek.
+
+\textbf{Implementation and settings:} how the code has been implemented, github link, machine on which it ran. Hyperparameters: learning rate, constraints bounds...
+
+\subsection{Results and Discussion}
+Present result tables, images (ground truth/Janiczek/us), signatures (mean, max and min against ground truth and Janiczek).
+
 
 \section{Conclusion}
 
+
 \section*{Acknowledgment}
 
-\section*{References}
 
+\section*{References}
 \bibliographystyle{IEEEtran}
 \bibliography{unmixing}
+
+
+\section{Appendix}
 
 \end{document}
