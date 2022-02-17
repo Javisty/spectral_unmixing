@@ -12,6 +12,9 @@
 \DeclareMathOperator*{\argmax}{arg\,max}
 \DeclareMathOperator*{\argmin}{arg\,min}
 
+\binoppenalty=\maxdimen
+\relpenalty=\maxdimen
+
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 \begin{document}
@@ -46,14 +49,14 @@ Hyperspectral Unmixing, Spectral Unmixing, Alternating Minimization, Proximal
 
 \section{Introduction}
 \textbf{Context:} what is spectral unmixing, some applications (remote sensing)\\
-\textbf{Variability models:} quick description of explicit (additive/multiplicative), black-box (Deep) and physical models.\\
-\textbf{Contribution:} take advantage of the dispersion model, with more prior information (regularization) than in Janiczek paper to obtain a more relevant model, while keeping a differentiable problem for an easier resolve (cf physical model is ugly).\\
+\textbf{Variability models:} quick description of explicit (additive/multiplicative), black-box (Deep) and physics models.\\
+\textbf{Contribution:} take advantage of the dispersion model, with more prior information (regularization) than in Janiczek paper to obtain a more relevant model, while keeping a differentiable problem for an easier resolve (cf natural model is ugly).\\
 
 \textbf{First draft:} In many real-world applications like space exploration, medicine, environment monitoring, mineral detection, hyperspectral images (HI) (consisting of samples of electromagnetic spectra at various wavelengths) can put into evidence some key characteristics of the location monitored. In particular, it is commonly supposed that each present EM have its own signature spectrum, which contributes to the HI depending on its abundance in each pixel. Hence, being able to unmix these characteristic signatures from HI leads to a precise detection of materials in a scene.
 
 However, despite the high spectral resolution of hyperspectral cameras, there are technical limits that must be taken into account; in particular low spatial resolution is to be expected, which leads to a mixture of EMs in each piel. While many unmixing algorithms already have been proposed, the physics behind is often too complex to be fully modelled.
 
-A first difficulty to handle is the SV: depending on the scene observed, an EM might have a different signature than what we were expecting from previous observations. This variability can even occurs locally, between pixels of a same HI, which actually question the hypothesis of one signature corresponding to one EM, rather than a class of signatures. Multiple factors can contribute to this variability, and we distinguish two kinds: intrisic and external. Intrisic variability is due to the physical differences of the EM samples across the HI (e.g. grass is greener on the other side because the neighbor water it) while external variability refers to the environment influence, like light and shade or the quality of the hyperspectral camera used.
+A first difficulty to handle is the SV: depending on the scene observed, an EM might have a different signature than what we were expecting from previous observations. This variability can even occurs locally, between pixels of a same HI, which actually question the hypothesis of one signature corresponding to one EM, rather than a class of signatures. Multiple factors can contribute to this variability, and we distinguish two kinds: intrisic and external. Intrisic variability is due to the natural differences of the EM samples across the HI (e.g. grass is greener on the other side because the neighbor water it) while external variability refers to the environment influence, like light and shade or the quality of the hyperspectral camera used.
 
 In the end, the unmixing problem is a very complex one, and requires advanced technics to overcome the difficulties. We will present some of them in the following section.
 
@@ -66,47 +69,88 @@ Learn variability from an a priori structure. Borsoi 2020
 \subsection{Deep models}
 Learn variability model directly from data, using deep structures. Borsoi 2019 (generative), Hong 2021, Ozkan 2019 (convolution)
 
-\subsection{Physical models}
-Rely on physical properties to infer (complex) models of variability. Try to keep it differentiable. Janiczek 2020.
+\subsection{Physics-based models}\label{sec:dispersion}
+Rely on physics properties to infer (complex) models of variability. Try to keep it differentiable. Janiczek 2020.
 
 
 \section{Problem statement}
-Formulate the optimization problem at hand.
+Based on the elements and observations we have seen so far, we come up with a formulation for the problems we are willing to tackle.
 
-\subsection{Dispersion model}
-Recall and detail the dispersion model, rewrite it with our notations.
+\subsection{Reconstruction model}
+The first part of a spectral unmixing strategy is to try to reconstruct the target HI from a specified model.
 
-\subsection{Sparsity and smoothness priors}
-Justify sparsity and smoothness for abundances and parameters/spectra from applications. Remind we want to remain differentiable. Present and justify the regularization terms chosen.
+Our approach consists in making use of the dispersion model presented in Section \ref{sec:dispersion}, within what we hope to be a better framework. So, the reconstructed spectra are generated by the dispersion model from the physics parameters. More precisely, we suppose that each EM is present in a state characterized by those parameter values in every pixel; and then each EM is associated to a signature spectrum derived from the dispersion model. The SV is modelized here by the variation of the parameter values through the HI, which in turn gives different signature spectra over the pixels. Regarding the unmixing, we decided to use Linear Unmixing once again, so that our model would still compare to the one in the original paper. We then introduce abundances for each EM, accross the HI.
+
+We consider a HI $B \in \mathbb{R}^{N \times M \times S}$ consisting of $N \times M = \Pi$ pixels, each pixel giving a spectrum evalutated at wavelenghts $w_1,\dots, w_S$. We assume that there are $P$ EMs in the HI, characterized by sets of parameters $\theta_1,\dots, \theta_P$. As we put ourselves in the dispersion model, each $\theta_p \in \mathbb{R}^{N \times M \times K \times 4}$ actually corresponds to the parameters $\rho, \omega_0, \gamma, \epsilon_r$ introduced in the previous section, with different values for different pixels. Then, we define the matrix of abundances $A \in [0, 1]^{N \times M\times P}$ such that $a_{i, j, p}$ corresponds to the abundance of EM $p$ in pixel $(i, j)$, and $\|A_{i, j, 1:P}\|_1 = 1$. Finally, $E(\theta_1,\dots, \theta_P) = E(\Theta) \in \mathbb{R}^{N \times M \times P \times S}$ gives the reference spectrum of each EM at each pixel, derived from the dispersion model: $E(\Theta)_{i, j, p, s} = \epsilon(\theta_{i, j, p}; w_s)$.
+
+The reconstruction problem we then want to solve states as follows:
+\begin{equation}
+  \label{eq:reconstruction}
+  \argmin_{\Theta \in \mathbb{R}^{\Pi \times P \times K \times 4}, A \in \mathbb{R}^{\Pi \times P}} H(\Theta, A)
+\end{equation}
+such that $A \geq 0, \|A_{i, j, 1:P}\|_1 = 1$ for all $1\leq i \leq N$, $1\leq j \leq M$, 
+
+with $H(\Theta, A) = \frac{1}{2} \|B - E(\Theta) \cdot A\|_{F, 2}^2$. The norm defined by $\|Q\|_{F, 2} = \sqrt{\sum_{1 \leq i \leq N,\\1 \leq j \leq M} \|Q_{i, j, 1:S}\|_2^2}$ is the Froebenius norm applied on the square norm over spectrum for every pixel. The motivation is to promote small differences between the reconstruction spectra and the target HI, all over the pixels.
 
 \subsection{Constraints}
-Obvious constraints for abundances, constraints for parameters taken from Janiczek. For the sake of differentiability and smooth optimization, we relax constraints as penalty terms. Present and justify the choices.
+The elements introduced in the previous section must respect some constraints: the abundances must obviously be positive and sum to 1 in each pixel, while the $\theta$ parameters should stay in a range of values, given their physics meaning.
 
-\subsection{Optimization problem}
-Wrap up: write the ideal problem statement, then rewrite it with the relaxation proposed. Highlight differentiability and smoothness.\\
+Regarding the latter, we will accuretely follow what has been done in Janiczek. In particular, we hope that the initialisation and the model will be good enough so that the parameters won't diverge away from reasonable values. Otherwise, we shall project the parameters on the accepted space.
 
-\textbf{Elements for the whole section:} While the previous model gives good results, some choices for the optimization part are questionable. So we decided to reuse the dispersion model introduced in another optimization framework, that hopefully will yield better results. In this section is introduced the general unmixing problem to solve.
+The abundances constraints can be formulated by an indicator operator:
+$$\iota_\Upsilon (A) = \begin{cases} 0 \text{ if A}\in \Upsilon\\ +\infty \text{ otherwise} \end{cases}$$
+where
+$$\Upsilon = \{Q \in \mathbb{R}^{\Pi \times P}_+\, |\,\| Q_{i, j, 1:P} \|_1 = 1 \ \forall 1 \leq i \leq N, 1 \leq j \leq M\}$$
+is the simplex where abundances live.
 
-The main improvements we wanted to add were intrisic variability and spatial constraints (controlled variation of parameters and abundances through the HI) and a better minimization approach than the analysis-by-synthesis with Linear Unmixing.
+However, this constraint introduces a significant discontinuity in the problem, then losing differentiability. For optimization reasons that are detailed later on, we chose to relax the constraints into penalty terms.
 
-We consider a HI $B \in \mathbb{R}^{N \times M \times S}$ consisting of $N \times M = \Pi$ pixels, each pixel giving a spectrum evalutated at wavelenghts $w_1,\dots, w_S$. We assume that there are $P$ EMs in the HI, characterized by sets of parameters $\theta_1,\dots, \theta_P$. As we put ourselves in the dispersion model, each $\theta_p \in \mathbb{R}^{N \times M \times K \times 4}$ actually corresponds to the parameters $\rho, \omega_0, \gamma, \epsilon_r$ introduced in the previous section, with different values between pixels. Then, we define the matrix of abundances $A \in [0, 1]^{N \times M\times P}$ such that $a_{i, j, p}$ corresponds to the abundance of EM $p$ in pixel $(i, j)$, and $\|A_{i, j, 1:P}\|_1 = 1$. Finally, $E(\theta_1,\dots, \theta_P) = E(\Theta) \in \mathbb{R}^{N \times M \times P \times S}$ gives the reference spectrum of each EM at each pixel, derived from the dispersion model: $E(\Theta)_{i, j, p, s} = \epsilon(\theta_{i, j, p}; w_s)$.
+The idea is to strongly promote values close to $\Upsilon$ for $A$, thanks to an approximation of the indicator. Such approach has already been presented and used in the literature, in the form of log-barrier method. In particular, we chose the \emph{log-barrier extension} introduced in Kervadec2020. This operator is convex, continuous and twice-differentiable, and is defined as follows, for some hyper-parameter $t > 0$:
+$$\forall z\in \mathbb{R},\ \tilde\Psi_t (z) = \begin{cases} - \frac{1}{t} \log (-z) & \text{if } z \leq -\frac{1}{t^2}\\ tz - \frac{1}{t} \log(\frac{1}{t^2}) + \frac{1}{t^2} & \text{otherwise} \end{cases}$$
+The higher $t$, the better the quality of the approximation; however one should be cautious not to overwhelm the other terms in the problems - this is discussed the next section.
 
-The problem we want to solve is the following:
+To translate the sum-to-one constraint on the abundances, we rewrite it as a sum-greater-than-one and sum-lesser-than-one constraint, in addition to the positivity one. Finally, we come up with the following penalty terms:
 \begin{equation}
-  \label{eq:gen}
-  \argmin_{\Theta \in \mathbb{R}^{\Pi \times P \times K \times 4}, A \in \mathbb{R}^{\Pi \times P}} H(\Theta, A) + f(\Theta) + g(A)
+\begin{split}
+  g_c (A) = & \sum_{i = 1}^N \sum_{j = 1}^M \sum_{p=1}^P \tilde\Psi_\nu (-a_{i,j,p})\\
+  &+ \sum_{i = 1}^N \sum_{j = 1}^M \left[ \tilde\Psi_\nu(\sum_{p=1}^P a_{i,j,p} - 1) + \tilde\Psi_\nu(1 - \sum_{p=1}^Pa_{i,j,p}) \right]
+\end{split}
 \end{equation}
-such that $A \geq 0, \|A_{i, j, 1:P}\|_1 = 1$ for all $1\leq i \leq N, 1\leq j \leq M$, 
 
-with $H(\Theta, A) = \frac{1}{2} \|B - E(\Theta) \cdot A\|_{F, 2}^2$ and $f$ and $g$ are regularization functions detailled in next subsections. The norm defined by $\|Q\|_{F, 2} = \sqrt{\sum_{1 \leq i \leq N,\\1 \leq j \leq M} \|Q_{i, j, 1:S}\|_2^2}$ is the Froebenius norm applied on the square norm over spectrum for every pixel.
+\subsection{Sparsity and smoothness priors}
+In this section are explained the priors introduced in the model.
 
-We would like to enforce spatial regularization on $\Theta$, to represent the idea that, as the environmental conditions are roughly continuous through space, so are material states. For instance, the quantity of water received by a lawn is close to the one received by the adjacent grass. Obviously, this hypothesis is not always appropriate, as your neighbor might water his lawn way much than you; but it should still be a relevant hypothesis in many applications.
+We would like to enforce spatial regularization on $\Theta$, to represent the idea that, as the environmental conditions are roughly continuous with respect to space dimensions, so are material states. For instance, the quantity of water received by a lawn is close to the one received by the adjacent grass. Obviously, this hypothesis is not always appropriate, as your neighbor might water his lawn way much than you; but it should still be a relevant hypothesis in many applications.
 
 $$f(\Theta) = \gamma \mathcal{L}(E(\Theta))$$ for some regularization term $\gamma \geq 0$, and $\mathcal{L}$ refers to a smoothing operator, directly inspired by the \emph{Total Variation} measure, applied for each EM.
 
-Regarding the abundances, for optimization we will actually include the constraints of \ref{eq:gen} in the regularization term. In addition to, we which to enforce sparsity of abundances in every pixel; we would rather have a few EMs in significant abundances than lot of EMs in small quantities. As well, we want to ensure that abundances aren't varying too abruptly through the HI, so we introduce a spatial regularization term.
+Regarding the abundances, we which to enforce sparsity of abundances in every pixel; we would rather have a few EMs in significant abundances than a lot of EMs in small quantities. A common choice to do so are the $\ell_0$ count measure, the $\ell_1$ norm, or the $\ell_p \ (p<1)$ quasi-norm. However, these terms are hard to handle in optimisation, as they introduce non-convexity and discontinuity. Hence, to keep once again our problem differentiable, we ressort to the SPOQ regularization, introduced by Cherni in 2020. It gives a smooth approximation of $\ell_0$.
 
-$g(A) = \iota_\Upsilon(A) + \delta \| \Psi(A) \|_{1}$ where $\iota_\Upsilon (A) = \begin{cases} 0 \text{ if A}\in \Upsilon\\ +\infty \text{ otherwise} \end{cases}$ is the indicator operator for $\Upsilon = \{Q \in \mathbb{R}^{\Pi \times P}\, |\, 0 \leq Q \leq 1,\, \forall 1 \leq i \leq N, 1 \leq j \leq M, \| Q_{i, j, 1:P} \|_1 = 1\}$, and $\| \Psi(\cdot) \|_{1}$ is the $\ell_1$ norm applied to the $N \times M$ matrix obtained by applying the SPOQ pseudo-norm over the abundances, in every pixel.
+For some parameters $p\in \, ]0, 2[$, $q\in \, [2, +\infty[$, and $(\alpha, \eta) \in \, ]0, +\infty [^2$, this term is defined as follow, for $x \in \mathbb{R}^N$:
+$$SPOQ(x) = \log \left( \frac{(\ell_{p,\alpha}^p (x) + \beta^p)^{1/p}}{\ell_{q,\eta} (x)} \right)$$
+        where
+        $$\ell_{p,\alpha} (x) = \left( \sum_{n=1}^N (x_n^2 + \alpha^2)^{p/2} - \alpha^p \right)^p$$
+        $$\ell_{q,\eta} (x) = \left( \eta^q + \sum_{n=1}^N |x_n|^q \right)^{1/q}$$
+
+The choice of the parameters is discussed in the next section.
+
+We then apply the SPOQ pseudo-norm on the vector of abundances in every pixel of the HI:
+$$SPOQ(A) = (SPOQ(a_{i,j,1:P}))_{i, j} \in \mathbb{R}_+^{N \times M}$$
+
+In the end, we define the sparsity term on abundances as:
+\begin{equation}
+  g_s(A) = \frac{\delta}{N \times M} \| SPOQ(A) \|_{1}
+\end{equation}
+
+We simply sum the SPOQ norms over the pixels.
+
+\subsection{Optimization problem}
+We are now ready to wrap-up our model into one differentiable (however non-convex) minimization problem:
+\begin{equation}
+  \label{eq:general}
+  \argmin_{\Theta \in \mathbb{R}^{\Pi \times P \times K \times 4}, A \in \mathbb{R}^{\Pi \times P}} H(\Theta, A) + f(\Theta) + g(A)
+\end{equation}
+where $g(A) = g_c(A) + g_s(A)$.
 
 
 \section{Inference algorithm}
@@ -125,7 +169,7 @@ Present result tables, images (ground truth/Janiczek/us), signatures (mean, max 
 
 
 \section{Conclusion}
-
+\textbf{Future work:} use something better than Linear Unmixing.
 
 \section*{Acknowledgment}
 
