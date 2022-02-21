@@ -110,7 +110,7 @@ $$\forall z\in \mathbb{R},\ \tilde\Psi_t (z) = \begin{cases} - \frac{1}{t} \log 
 The higher $t$, the better the quality of the approximation; however one should be cautious not to overwhelm the other terms in the problems - this is discussed the next section.
 
 To translate the sum-to-one constraint on the abundances, we rewrite it as a sum-greater-than-one and sum-lesser-than-one constraint, in addition to the positivity one. Finally, we come up with the following penalty terms:
-\begin{equation}
+\begin{equation}\label{eq:g_c}
 \begin{split}
   g_c (A) = & \sum_{i = 1}^N \sum_{j = 1}^M \sum_{p=1}^P \tilde\Psi_\nu (-a_{i,j,p})\\
   &+ \sum_{i = 1}^N \sum_{j = 1}^M \left[ \tilde\Psi_\nu(\sum_{p=1}^P a_{i,j,p} - 1) + \tilde\Psi_\nu(1 - \sum_{p=1}^Pa_{i,j,p}) \right]
@@ -138,22 +138,32 @@ We then apply the SPOQ pseudo-norm on the vector of abundances in every pixel of
 $$SPOQ(A) = (SPOQ(a_{i,j,1:P}))_{i, j} \in \mathbb{R}_+^{N \times M}$$
 
 In the end, we define the sparsity term on abundances as:
-\begin{equation}
+\begin{equation}\label{eq:g_s}
   g_s(A) = \frac{\delta}{N \times M} \| SPOQ(A) \|_{1}
 \end{equation}
 
 We simply sum the SPOQ norms over the pixels.
 
 \subsection{Optimization problem}
-We are now ready to wrap-up our model into one differentiable (however non-convex) minimization problem:
+In this section we wrap-up what have been said so far, to first come up with what would be our ideal model, and secondly we relax it into a differentiable one, as an approximation.
+\begin{equation}
+  \label{eq:ideal}
+  \argmin_{\Theta \in \mathbb{R}^{\Pi \times P \times K \times 4}, A \in \mathbb{R}^{\Pi \times P}} H(\Theta, A) + f(\Theta) + \delta \|A\|_{1,0} + \iota_\Upsilon (A)
+\end{equation}
+where $\|A\|_{1,0} = \sum_{i,j,p} \mathbf{1}_{(a_{i,j,p} > 0)}$. As disclaimed above, this objective function is highly non-continuous, and while there are some methods to handle such difficulties we didn't find a fitting solution in our case. This is further discussed in the following section.
+
+Hence, we use the approximation terms described earlier to relax the objective function into this differentiable one:
+
 \begin{equation}
   \label{eq:general}
   \argmin_{\Theta \in \mathbb{R}^{\Pi \times P \times K \times 4}, A \in \mathbb{R}^{\Pi \times P}} H(\Theta, A) + f(\Theta) + g(A)
 \end{equation}
-where $g(A) = g_c(A) + g_s(A)$.
+where $g(A) = g_c(A) + g_s(A)$ (see (\ref{eq:g_c}) and (\ref{eq:g_s})).
 
 
 \section{Inference algorithm}
+
+
 Detail difficulties encountered to solve the first version of the problem, and the leads found (Alternating minimization, PALM, bundle algorithms...). Present and justify the algorithm used to solve the problem (SGD, Adam, Autodiff PyTorch). Mention Adam-like algorithms for non-convex optimization, that would have been better with more time for implementation. Compare to Janiczek approach.
 
 \section{Experiments}
