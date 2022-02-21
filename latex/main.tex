@@ -117,7 +117,7 @@ To translate the sum-to-one constraint on the abundances, we rewrite it as a sum
 \end{split}
 \end{equation}
 
-\subsection{Sparsity and smoothness priors}
+\subsection{Smoothness priors}
 In this section are explained the priors introduced in the model.
 
 We would like to enforce spatial regularization on $\Theta$, to represent the idea that, as the environmental conditions are roughly continuous with respect to space dimensions, so are material states. For instance, the quantity of water received by a lawn is close to the one received by the adjacent grass. Obviously, this hypothesis is not always appropriate, as your neighbor might water his lawn way much than you; but it should still be a relevant hypothesis in many applications.
@@ -146,7 +146,9 @@ are the discrete \emph{horizontal} and \emph{vertical} gradients.
 
 (\ref{eq:f}) use some regularization term $\gamma \geq 0$, and a smoothing operator $\mathcal{L}$, directly inspired by the \emph{Total Variation} measure (see Condat 2014), applied for each EM.
 
-Regarding the abundances, we which to enforce sparsity of abundances in every pixel; we would rather have a few EMs in significant abundances than a lot of EMs in small quantities. A common choice to do so are the $\ell_0$ count measure, the $\ell_1$ norm, or the $\ell_p \ (p<1)$ quasi-norm. However, these terms are hard to handle in optimisation, as they introduce non-convexity and discontinuity. Hence, to keep once again our problem differentiable, we ressort to the SPOQ regularization, introduced by Cherni in 2020. It gives a smooth approximation of $\ell_0$.
+\subsection{Sparsity priors}
+
+Regarding the abundances, we whish to enforce sparsity of abundances in every pixel; we would rather have a few EMs in significant abundances than a lot of EMs in small quantities. Common choices to do so are the $\ell_0$ count measure, the $\ell_1$ norm, or the $\ell_p \ (p<1)$ quasi-norm. However, these terms are hard to handle during optimisation, as they introduce non-convexity and discontinuity. Hence, to keep once again our problem differentiable, we ressort to the SPOQ regularization, introduced by Cherni in 2020. It gives a smooth approximation of $\ell_0$.
 
 For some parameters $p\in \, ]0, 2[$, $q\in \, [2, +\infty[$, and $(\alpha, \eta) \in \, ]0, +\infty [^2$, this term is defined as follow, for $x \in \mathbb{R}^N$:
 $$SPOQ(x) = \log \left( \frac{(\ell_{p,\alpha}^p (x) + \beta^p)^{1/p}}{\ell_{q,\eta} (x)} \right)$$
