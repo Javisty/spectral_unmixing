@@ -4,6 +4,7 @@ import pytest
 
 from src.regularization import (norm_1_2,
                                 smoothing,
+                                DispersionRegularization,
                                 log_barrier_extension,
                                 LogBarrierExtensionAbundances,
                                 SPOQ,
@@ -21,6 +22,14 @@ def test_smoothing():
     theta = torch.cat((theta, theta, theta), dim=2)
     theta = torch.cat((theta, theta), dim=3)
     assert smoothing(theta) == pytest.approx(3*2*(3 + np.sqrt(5))**2)
+
+
+def test_dispersion_regu():
+    theta = torch.from_numpy(np.arange(4).reshape((2, 2, 1, 1)))
+    theta = torch.cat((theta, theta, theta), dim=2)
+    theta = torch.cat((theta, theta), dim=3)
+    regu = DispersionRegularization(0.1)
+    assert regu(theta) == pytest.approx(0.1*3*2*(3 + np.sqrt(5))**2)
 
 
 class TestLogBarrierExtension:

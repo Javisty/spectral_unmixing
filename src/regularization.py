@@ -36,7 +36,7 @@ class DispersionRegularization(nn.Module):
 
     def forward(self, theta):
         """Return the regularization term for parameters theta."""
-        pass
+        return self.penalty * smoothing(theta)
 
 
 class SPOQ(nn.Module):
