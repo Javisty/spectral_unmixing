@@ -187,8 +187,17 @@ where $g(A) = g_c(A) + g_s(A)$ (see (\ref{eq:g_c}) and (\ref{eq:g_s})).
 
 \section{Inference algorithm}
 
+The optimisation problem presented in (\ref{eq:ideal}) is composed of one differentiable, non-convex block $H(\Theta, A) + f(\Theta)$ and one non-convex, non-continuous block $\delta\|A\|_{1,0} + \iota_\Upsilon (A)$, and deal with two vectors of parameters $\Theta$ and $A$.
 
-Detail difficulties encountered to solve the first version of the problem, and the leads found (Alternating minimization, PALM, bundle algorithms...). Present and justify the algorithm used to solve the problem (SGD, Adam, Autodiff PyTorch). Mention Adam-like algorithms for non-convex optimization, that would have been better with more time for implementation. Compare to Janiczek approach.
+The first alternative to non-differentiability is to use Moreau's proximal operator: a first-order approximation of a gradient descent step. We would then operate an alternating minimization on $\Theta$ (differentiable) and $A$ (non-differentiable). However, algorithms involving this operator typically rely on the knowledge of a (tight) Lipschitz constant of the differentiable part to derive a fitting learning rate, and due to the complex definition of the dispersion model we do not have access to such a constant. Moreover, one can't easily derive the close form of the proximal operator of an addition of two non-differentiable, non-convex terms.
+
+Related families of optimization algorithms would be subgradient or bundle algorithms, unfortunately they do not seem to apply to our problem, mainly because of the non-convexity and the fact that in the constraint $\iota_\Upsilon$ on $A$, $\Upsilon$ is a simplex rather than a convex space.
+
+Hence, instead of testing such approaches without guarantees, we chose a Lagrangian-based method from Kervadec2020, using a \emph{log-barrier extension} to replace the constraint term for $A$. Then, thanks to Cherni2020 we approximate the sparsity term on $A$ with a smooth approximation, so that as written in (\ref{eq:general}) we put ourselves in a smooth context.
+
+Finally, thanks to these rewritings we are able to do a Stochastic Gradient Descent-like optimisation with Adam-which has already shown to be an efficient approach for such problems. A discussion can be made on other Adam-like algorithms in a non-convex problem (cf Chen2019), yet we will stick to the classical Adam for simplicity reasons. In particular, we shall use the Autodiff feature from PyTorch rather than deriving by hand the awfully complex gradient of (\ref{eq:general}).
+
+To wrap-up, the inclusion of our priors raised some major optimization issues, due to which we have been forced to resort to a sub-optimal approach. Hopefully, the behavior will still be good, thanks to the senseful priors and a good initialization provided by the dispersion model. On the other hand, Janiczek \emph{analysis-by-synthesis} consists in an alternating minimization of the reconstruction error, on the abundances and the physics parameters. The main difference with our approach is that the parameters (and then the signature spectrum) of EMs are assumed to be the same all accross the HI.
 
 \section{Experiments}
 \subsection{Experimental settings}
