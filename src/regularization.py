@@ -84,7 +84,7 @@ class LogBarrierExtensionAbundances(nn.Module):
     def __init__(self, t):
         """t: parameter of the log-barrier extension."""
         super().__init__()
-        self.t = t
+        self.t = torch.tensor(t)
 
     def log_barrier_extension(self, z):
         """Apply log-barrier extension function with parameter self.t."""
@@ -115,8 +115,8 @@ def log_barrier_extension(z, t):
     See paper arXiv:1904.04205v4 (Kervadec 2020)
     """
     return torch.where(z <= -1/t**2,
-                       -np.log(-z) / t,
-                       t * z - np.log(1/t**2)/t + 1/t)
+                       -torch.log(-z) / t,
+                       t * z - torch.log(1/t**2)/t + 1/t)
 
 
 def smoothing(theta):

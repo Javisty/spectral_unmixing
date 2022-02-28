@@ -24,7 +24,8 @@ class AutogradDescent(nn.Module):
         for epoch in range(epochs):
             self.step()
             if epoch % 5 == 0:
-                self.display(epoch)
+                print(f"\r Epoch {epoch}\t Current loss: {self.obj.forward()}",
+                      end='')
 
     def step(self):
         """Do one step of Gradient Descent."""

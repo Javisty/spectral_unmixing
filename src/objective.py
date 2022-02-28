@@ -36,7 +36,7 @@ class SmoothedLinearUnmixing(nn.Module):
 
     def regularization_penalty(self):
         """Compute the regularization penalty based on the current state."""
-        return self.regu_A.forward() + self.regu_E.forward()
+        return self.regu_A.forward(self.A) + self.regu_E.forward()
 
     def forward(self):
         """
