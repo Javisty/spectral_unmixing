@@ -29,6 +29,7 @@ class AbundanceRegularization(nn.Module):
 
 class DispersionRegularization(nn.Module):
     """Regularization on Dispersion model parameters."""
+
     def __init__(self, penalty):
         """penalty: the penalty on the regularization term."""
         super().__init__()

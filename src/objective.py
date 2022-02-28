@@ -1,7 +1,6 @@
 """Define the objective function to minimize."""
 import torch
 import torch.nn as nn
-from .regularization import AbundanceRegularization, DispersionRegularization
 
 
 class SmoothedLinearUnmixing(nn.Module):
