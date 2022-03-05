@@ -1,8 +1,8 @@
-\documentclass[conference]{IEEEtran}
-\IEEEoverridecommandlockouts
+\documentclass{article}
 % The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
 
-\usepackage{cite}
+\usepackage[preprint]{jmlr2e}
+
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{algorithmic}
 \usepackage{graphicx}
@@ -17,35 +17,35 @@
 
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+% Short headings should be running head and authors last names
+
+\ShortHeadings{Learning with Mixtures of Trees}{Côme \& Thouvenin}
+\firstpageno{1}
+
 \begin{document}
 
-\title{Conference Paper Title*\\
-{\footnotesize \textsuperscript{*}Note: Sub-titles are not captured in Xplore and
-should not be used}
-}
+\title{Learning with Mixtures of Trees}
 
-\author{\IEEEauthorblockN{Aymeric CÔME}
-\IEEEauthorblockA{\textit{Master Data Science student} \\
-\textit{Université de Lille, Centrale Lille, IMT Lille-Douai}\\
-Lille, France \\
-aymeric.come.etu@univ-lille.fr}
-\and
-\IEEEauthorblockN{Pierre-Antoine THOUVENIN}
-\IEEEauthorblockA{\textit{Assistant professor and member of SigMA team} \\
-\textit{Université de Lille, CNRS, Centrale Lille, CRIStAL}\\
-Lille, France \\
-pierre-antoine.thouvenin@centralelille.fr}
-}
+\author{\name Aymeric CÔME \email aymeric.come.etu@univ-lille.fr \\
+       \addr Master Data Science\\
+       University of Lille, Centrale Lille, IMT Lille-Douai\\
+       Villeneuve d'Ascq, France
+       \AND
+       \name Pierre-Antoine THOUVENIN \email pierre-antoine.thouvenin@centralelille.fr \\
+       \addr Assistant professor and member of SigMA team\\
+       Université de Lille, CNRS, Centrale Lille, CRIStAL\\
+       Villeneuve d'Ascq, France}
 
 \maketitle
 
-\begin{abstract}
-  Hyperspectral unmixing is the task of infering the abundance of pure materials in an image from the observed spectra. The resulting spectrum indeed depends on some characteristical features of the End-Members (EMs), however this is a challenging problem because not only it is nonlinear, but also miscellaneous factors can change the output, which is known as Spectral Variability (SV). To tackle this problem, a paper~\cite{janiczek_differentiable_2020} introduced a physics-based, differentiable model to realistically capture EM HV, and then used it in an optimization framework in order to find promising results for spectral unmixing. However, while the dispersion model seems fruitful, the optimization part raises questions. In the following is presented how we try to improve the unmixing process.
+\begin{abstract}%
+  Hyperspectral unmixing is the task of infering the abundance of pure materials in an image from the observed spectra. The resulting spectrum indeed depends on some characteristical features of the End-Members (EMs), however this is a challenging problem because not only it is nonlinear, but also miscellaneous factors can change the output, which is known as Spectral Variability (SV). To tackle this problem, a paper \citep{janiczek_differentiable_2020} introduced a physics-based, differentiable model to realistically capture EM HV, and then used it in an optimization framework in order to find promising results for spectral unmixing. However, while the dispersion model seems fruitful, the optimization part raises questions. In the following is presented how we try to improve the unmixing process.
 \end{abstract}
 
-\begin{IEEEkeywords}
+\begin{keywords}
 Hyperspectral Unmixing, Spectral Unmixing, Alternating Minimization, Proximal
-\end{IEEEkeywords}
+\end{keywords}
 
 \section{Introduction}
 \textbf{Context:} what is spectral unmixing, some applications (remote sensing)\\
@@ -214,11 +214,13 @@ Present result tables, images (ground truth/Janiczek/us), signatures (mean, max 
 \section{Conclusion}
 \textbf{Future work:} use something better than Linear Unmixing.
 
-\section*{Acknowledgment}
+%\section*{Acknowledgment}
 
+\acks{Put acknowledgements here}
 
-\section*{References}
-\bibliographystyle{IEEEtran}
+%\section*{References}
+
+% \bibliographystyle{IEEEtran}
 \bibliography{unmixing}
 
 
