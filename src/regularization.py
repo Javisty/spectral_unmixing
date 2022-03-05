@@ -1,6 +1,7 @@
 """Define the regularization terms."""
 import torch
 import torch.nn as nn
+from maskedtensor import masked_tensor
 import numpy as np
 
 
@@ -8,23 +9,27 @@ class AbundanceRegularization(nn.Module):
     """Regularization on abundances."""
 
     def __init__(self,
-                 t_barrier=5,
+                 barrier_params=(5, 1.1),
+                 barrier_penalty=0.1,
                  spoq_params=(0.25, 2, 7e-7, 3e-3, 0.1),
                  sparsity_penalty=1e-2):
         """
-        t_barrier: parameter to define the log-barrier function.
+        barrier_params: parameters (t, mu) to define the log-barrier function
+        barrier_penalty: penalty on the barrier term
         spoq_params: (p, q, alpha, beta, eta) the tuple of parameters defining
         the pseudo-norm used for sparsity
         sparsity_penalty: penalty on the sparsity term
         """
         super().__init__()
-        self.barrier = LogBarrierExtensionAbundances(t_barrier)
+        self.barrier = LogBarrierExtensionAbundances(*barrier_params)
         self.spoq = SPOQ(*spoq_params)
         self.delta = sparsity_penalty
+        self.zeta = barrier_penalty
 
     def forward(self, A):
         """Return the regularization term for abundances A."""
-        return self.barrier.forward(A) + self.delta * self.spoq.forward(A)
+        return self.zeta * self.barrier.forward(A)\
+            + self.delta * self.spoq.forward(A)
 
 
 class DispersionRegularization(nn.Module):
@@ -81,14 +86,54 @@ class LogBarrierExtensionAbundances(nn.Module):
     See paper arXiv:1904.04205v4 (Kervadec 2020)
     """
 
-    def __init__(self, t):
-        """t: parameter of the log-barrier extension."""
+    def __init__(self, t, increase_factor=1.1):
+        """
+        t: parameter of the log-barrier extension
+        increase_factor: factor to multiply t with at each step
+        """
         super().__init__()
         self.t = torch.tensor(t)
+        self.mu = increase_factor
+        na_where = NaNWhere
+
+        @staticmethod
+        def forward(ctx, x, f1, f2, mask_fn=self.condition):
+            x_1 = x.detach().clone().requires_grad_(True)
+            x_2 = x.detach().clone().requires_grad_(True)
+
+            with torch.enable_grad():
+                y_1 = f1(x_1)
+                y_2 = f2(x_2)
+
+            mask = mask_fn(x)
+
+            ctx.save_for_backward(mask)
+            ctx.x_1 = x_1
+            ctx.x_2 = x_2
+            ctx.y_1 = y_1
+            ctx.y_2 = y_2
+
+            return torch.where(mask, y_1, y_2)
+        na_where.forward = forward
+
+        self.nan_where = na_where.apply
+
+    def increase_t(self):
+        """Change t by a factor self.mu."""
+        self.t = self.t * self.mu
+
+    def condition(self, x):
+        return x <= -1/self.t**2
+
+    def f1(self, x):
+        return -torch.log(-x) / self.t
+
+    def f2(self, x):
+        return self.t * x - torch.log(1/self.t**2)/self.t + 1/self.t
 
     def log_barrier_extension(self, z):
         """Apply log-barrier extension function with parameter self.t."""
-        return log_barrier_extension(z, self.t)
+        return self.nan_where(z, self.f1, self.f2)
 
     def forward(self, A):
         """
@@ -108,15 +153,60 @@ class LogBarrierExtensionAbundances(nn.Module):
         return positive + lt_1 + gt_1
 
 
-def log_barrier_extension(z, t):
+class NaNWhere(torch.autograd.Function):
+    '''
+    An adaptation of torch.where to situations like
+    output = torch.where(torch.isfinite(f1(x)), f1(x), f2(x))
+    where the point of torch.where is to mask out invalid application
+    of f1 to some elements of x and replace them with fallback values
+    provided by f2(x).
+    '''
+    @staticmethod
+    def forward(ctx, x, f1, f2, mask_fn=torch.isfinite):
+        x_1 = x.detach().clone().requires_grad_(True)
+        x_2 = x.detach().clone().requires_grad_(True)
+
+        with torch.enable_grad():
+            y_1 = f1(x_1)
+            y_2 = f2(x_2)
+
+        mask = mask_fn(x)
+
+        ctx.save_for_backward(mask)
+        ctx.x_1 = x_1
+        ctx.x_2 = x_2
+        ctx.y_1 = y_1
+        ctx.y_2 = y_2
+
+        return torch.where(mask, y_1, y_2)
+
+    @staticmethod
+    def backward(ctx, gout):
+        mask, = ctx.saved_tensors
+
+        torch.autograd.backward([ctx.y_1, ctx.y_2], [gout, gout])
+        gin = torch.where(mask, ctx.x_1.grad, ctx.x_2.grad)
+
+        return gin, None, None
+
+
+def log_barrier_extension(z, t, f1, f2, where_, mask_fn):
     """
     Log-barrier extension function applied on z for parameter t.
 
     See paper arXiv:1904.04205v4 (Kervadec 2020)
     """
-    return torch.where(z <= -1/t**2,
-                       -torch.log(-z) / t,
-                       t * z - torch.log(1/t**2)/t + 1/t)
+    # mask = (z <= -1/t**2)
+    # z_left = masked_tensor(z, mask, requires_grad=True)
+    # z_right = masked_tensor(z, ~mask, requires_grad=True)
+    # return torch.where(mask,
+    #                    -torch.log(-z_left) / t,
+    #                    t * z_right - torch.log(1/t**2)/t + 1/t)
+    return where_(z, f1, f2)
+
+    # return torch.where(z <= -1/t**2,
+    #                    -torch.log(-z) / t,
+    #                    t * z - torch.log(1/t**2)/t + 1/t)
 
 
 def smoothing(theta):

@@ -20,19 +20,22 @@ class SmoothedLinearUnmixing(nn.Module):
         super().__init__()
         self.target = target
         self.model = model
-        self.A = abundances
+        self.A = nn.Parameter(abundances)
         self.N, self.M, self.P = abundances.size()  # dimensions of problem
         self.regu_A = regu_ab
         self.regu_E = regu_model
+
+    def reconstruct(self):
+        """Return the reconstructed spectrum at the current state."""
+        abundances = self.A.reshape(self.N, self.M, self.P, 1)
+        return torch.sum(self.model.forward() * abundances, dim=2)
 
     def reconstruction_error(self):
         """
         Compute the reconstruction error of the image based on the current
         state.
         """
-        abundances = self.A.reshape(self.N, self.M, self.P, 1)
-        reconstruction = torch.sum(self.model.forward() * abundances, dim=2)
-        return torch.sum((self.target - reconstruction)**2)
+        return torch.sum((self.target - self.reconstruct())**2)
 
     def regularization_penalty(self):
         """Compute the regularization penalty based on the current state."""
