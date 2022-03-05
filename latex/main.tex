@@ -158,12 +158,9 @@ $$\forall z\in \mathbb{R},\ \tilde\Psi_t (z) = \begin{cases} - \frac{1}{t} \log 
 
 The higher $t$, the better the quality of the approximation; however one should be cautious not to overwhelm the other terms in the problems - this is discussed the next section.
 
-To translate the sum-to-one constraint on the abundances, we rewrite it as a sum-greater-than-one and sum-lesser-than-one constraint, in addition to the positivity constraint. Finally, we come up with the following penalty term:
+To translate the sum-to-one constraint on the abundances, we rewrite it as a sum-greater-than-one and sum-lesser-than-one constraint, in addition to the positivity constraint. Finally, we come up with the following penalty term, $\zeta > 0$ a penalty factor:
 \begin{equation}\label{eq:g_c}
-\begin{split}
-  g_c (A) = & \sum_{i = 1}^N \sum_{j = 1}^M \sum_{p=1}^P \tilde\Psi_\nu (-a_{i,j,p})\\
-  &+ \sum_{i = 1}^N \sum_{j = 1}^M \left[ \tilde\Psi_\nu(\sum_{p=1}^P a_{i,j,p} - 1) + \tilde\Psi_\nu(1 - \sum_{p=1}^Pa_{i,j,p}) \right]
-\end{split}
+  g_c (A) = \zeta \cdot \Bigg[ \sum_{i = 1}^N \sum_{j = 1}^M \sum_{p=1}^P \tilde\Psi_\nu (-a_{i,j,p}) + \sum_{i = 1}^N \sum_{j = 1}^M \left[ \tilde\Psi_\nu(\sum_{p=1}^P a_{i,j,p} - 1) + \tilde\Psi_\nu(1 - \sum_{p=1}^Pa_{i,j,p}) \right] \Bigg]
 \end{equation}
 
 \subsubsection{Sparsity}
