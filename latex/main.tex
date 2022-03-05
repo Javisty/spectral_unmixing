@@ -206,12 +206,35 @@ Finally, thanks to these rewritings we are able to do a Stochastic Gradient Desc
 To wrap-up, the inclusion of our priors raised some major optimisation issues, due to which we have been forced to resort to a sub-optimal approach. Hopefully, the behavior will still be good, thanks to the senseful priors and a good initialization provided by the dispersion model. On the other hand, Janiczek \emph{analysis-by-synthesis} consists in an alternating minimization of the reconstruction error, on the abundances and the physics parameters. The main difference with our approach is that the parameters (and then the signature spectrum) of EMs are assumed to be the same all accross the HI.
 
 \section{Experiments}
+In order to validate our approach, we implemented it using \textsf{PyTorch} \footnote{https://pytorch.org/} with \textsf{Python 3.7}; the details can be found on GitHub \footnote{https://github.com/Javisty/spectral\_
+unmixing}. In this section we describe the data used, the evaluation process, and make some discussion and comparison with CITE(JANICZEK), before presenting and analysing the results.
+
 \subsection{Experimental settings}
-\textbf{Datasets:} Describe datasets used for evaluation of the algorithm. Compare with the ones from Janiczek paper.
+\subsubsection{Datasets}
+Ideally we would experiment on multiple real-world datasets for which we have access to the ground-truth abundance map and EM parameters and signature spectra in addition to a 2D HI, however such data is very hard to obtain. Additionaly, we should compare our performances with the ones of CITE(JANICZEK). Hence we resort to one dataset used in CITE(JANICZEK) and one synthetically generated.
 
-\textbf{Evaluation criteria:} RMSE, ASAM, MSE for abundances (per EM and for all), reconstruction error $H(\Theta, A)$. Compare with Janiczek.
+\textit{Feely et al. dataset \cite{feely}:} 90 samples of thermal emission spectra in the infrared for various minerals measured in the lab, over $830$ spectral channels. Ground truth was determined via optical petrography, and a labeled endmember library is provided, so that we have the true abundances for the $38$ EMs. Also, as the EMs are known minerals, we can already initialize the parameters $\Theta$ with physics-based values. CITE(JANICZEK) already tested the dispersion model on this data, so we want to compare how our additional priors will affect the results. Unfortunately, as the samples are actually independent pixels, we couldn't use spatial regularisation here.
 
-\textbf{Implementation and settings:} how the code has been implemented, github link, machine on which it ran. Hyperparameters: learning rate, constraints bounds...
+\textit{Synthetic data \cite{thouvenin}:} synthetically generated data, with white Gaussian noise (SNR=15dB) and some random SV. The HIs have size $128 \times 64$, and are generated from $3$ or $6$ EMs for $413$ spectral channels. We are able to test all our priors on this dataset, yet it is important to note that the spectra have been generated independently between the pixels, so that our spatial smoothness priors doesn't hold here. The code is available on GitHub \footnote{https://github.com/pthouvenin/synthetic-hs-variability}.
+
+\subsubsection{Evaluation criteria:}
+To assess the performance of the approach, we use some common metrics in the literature: aSAM (average Spectral Angle Mapper) and RMSE (Root Mean Square Error) for the EMs signature spectra, MSE for abundances (per EM and global) and the reconstruction error $H(\Theta, A)$.
+
+\begin{align*}
+  aSAM(E_{fitted}) &= \frac{1}{N M P} \sum_{p=1}^P arccos \left( \frac{\langle e_{fitted, p} | e_{real, p} \rangle}{\| e_{fitted, p} \|_2 \| e_{real, p} \|_2} \right)\\
+  RMSE(A_{fitted}) &= \frac{1}{N M P} \| A_{fitted} - A_{real} \|_{\mathcal{F}}
+\end{align*}
+
+We shall as well compare those results with the ones of CITE(JANICZEK).
+
+\subsubsection{Compared methods:}
+Our work consists in reusing the dispersion model from CITE(JANICZEK), and apply it in an other optimisation framework, in which we promote sparsity of abundances and spatial smoothness in a differentiable way. Then, we solve the problem with a classic gradient descent algorithm. Of course, the objective function is badly not convex, yet as for CITE(JANICZEK) we rely on a good initialisation of the EM parameters to find a relevant minimum.
+
+On the other hand, in the reference paper they set their dispersion model in a mixed optimisation problem, between Alternating Minimization ADD CITATION and Block Coordinate Decent ADD CITATION. Indeed, in the analysis-by-synthesis at each iteration a full minimisation is performed on the abundances, and then one step of gradient descent (ADAM) is performed on the EM parameters.
+
+comparison with Janiczek pseudo Alternative Minimization/Block Descent, and priors.
+
+\subsubsection{Training and implementation details:} hyper-parameters (choice, tuning...), possibility to try Alternative/Block Descent, projection on simplex.
 
 \subsection{Results and Discussion}
 Present result tables, images (ground truth/Janiczek/us), signatures (mean, max and min against ground truth and Janiczek).
