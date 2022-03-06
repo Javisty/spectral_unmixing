@@ -131,7 +131,7 @@ Finally, we enforce smoothness by minimizing the sum of the squared variations, 
 
 \begin{align}\label{eq:f}
   f(\Theta) &= \gamma \mathcal{L}(\Theta)\\
-  &= \gamma \sum_{t = 1}^{T} \| D(\Theta_{:,:,t}) \|_{1,2}^2
+  &= \gamma \sum_{t = 1}^{T} \sum_{p = 1}^P \| D(\Theta_{:,:,t}) \|_{1,2}^2
 \end{align}
 
 Note that one might prefer to ensure smoothness of the spectra rather than the parameters; we would then have:
@@ -154,11 +154,11 @@ is the simplex where abundances live.
 However, this constraint introduces a significant discontinuity in the problem, then losing differentiability. To circumvent this issue, we have chosen to relax the constraint term into a smooth penalty term, so that we strongly encourage abundances to stay close the $\Upsilon$ while being differentiable. This relaxation should be acceptable as our model is linear with respect to the abundances, so that the mixture spectrum obtained with an abundance map close to $\Upsilon$ should still provide a good reconstruction.
 
 The idea is to strongly promote values close to $\Upsilon$ for $A$, thanks to an approximation of the indicator. Such approach has already been presented and used in the literature, in the form of \emph{log-barrier method} ADD CITATION. In particular, we chose the \emph{log-barrier extension} introduced in CITE(Kervadec2020). This operator is convex, continuous and twice-differentiable, and is defined as follows, for some hyper-parameter $t > 0$:
-$$\forall z\in \mathbb{R},\ \tilde\Psi_t (z) = \begin{cases} - \frac{1}{t} \log (-z) & \text{if } z \leq -\frac{1}{t^2}\\ tz - \frac{1}{t} \log(\frac{1}{t^2}) + \frac{1}{t^2} & \text{otherwise} \end{cases}$$
+$$\forall z\in \mathbb{R},\ \tilde\Psi_t (z) = \begin{cases} - \frac{1}{t} \log (-z) & \text{if } z \leq -\frac{1}{t^2}\\ tz - \frac{1}{t} \log(\frac{1}{t^2}) + \frac{1}{t} & \text{otherwise} \end{cases}$$
 
 The higher $t$, the better the quality of the approximation; however one should be cautious not to overwhelm the other terms in the problems - this is discussed the next section.
 
-To translate the sum-to-one constraint on the abundances, we rewrite it as a sum-greater-than-one and sum-lesser-than-one constraint, in addition to the positivity constraint. Finally, we come up with the following penalty term, $\zeta > 0$ a penalty factor:
+To translate the sum-to-one constraint on the abundances, we rewrite it as a sum-greater-than-one and sum-lesser-than-one constraint, in addition to the positivity constraint. Finally, we come up with the following penalty term, $\zeta > 0$ and $\nu > 0$ being hyper-parameters:
 \begin{equation}\label{eq:g_c}
   g_c (A) = \zeta \cdot \Bigg[ \sum_{i = 1}^N \sum_{j = 1}^M \sum_{p=1}^P \tilde\Psi_\nu (-a_{i,j,p}) + \sum_{i = 1}^N \sum_{j = 1}^M \left[ \tilde\Psi_\nu(\sum_{p=1}^P a_{i,j,p} - 1) + \tilde\Psi_\nu(1 - \sum_{p=1}^Pa_{i,j,p}) \right] \Bigg]
 \end{equation}
