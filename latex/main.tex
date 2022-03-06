@@ -40,7 +40,7 @@
 \maketitle
 
 \begin{abstract}%
-  Hyperspectral unmixing consists in infering the proportion of presence (\emph{abundance}) and \emph{signatures} of pure materials composing an hyperspectral image, observed over hundreds of wavelengths. The spectra observed in each pixel indeed result from a mixture of several signatures, referrend to as \emph{endmembers}, which characterize the materials present in the observed scene. The problem is challenging in that it is not only non-linear, but can be further affected by multiple factors which can locally affect the shape of the endmembers, the so-called spectral variability. To tackle this problem, \citep{janiczek_differentiable_2020} introduced a physics-based, differentiable model to realistically capture endmembers. However, the approach investigated in CITE(JANICZEK) exploits none of the usual prior information commonly used in the literature (e.g. spatial smoothness, sparse abundances). In this project, we propose to extend this approach by considering additional regularization terms on both the abundances and the variability, and investigate their impact on unmixing quality.
+  Hyperspectral unmixing consists in infering the proportion of presence (\emph{abundance}) and \emph{signatures} of pure materials composing an hyperspectral image, observed over hundreds of wavelengths. The spectra observed in each pixel indeed result from a mixture of several signatures, referrend to as \emph{endmembers}, which characterize the materials present in the observed scene. The problem is challenging in that it is not only non-linear, but can be further affected by multiple factors which can locally affect the shape of the endmembers, the so-called spectral variability. To tackle this problem, \citet{janiczek_differentiable_2020} introduced a physics-based, differentiable model to realistically capture endmembers. However, the approach investigated in \citet{janiczek_differentiable_2020} exploits none of the usual prior information commonly used in the literature (e.g. spatial smoothness, sparse abundances). In this project, we propose to extend this approach by considering additional regularization terms on both the abundances and the variability, and investigate their impact on unmixing quality.
 \end{abstract}
 
 \begin{keywords}
@@ -85,7 +85,7 @@ In this work, we propose to make use of the dispersion model presented in Sectio
 
 We consider a HI $B \in \mathbb{R}^{N \times M \times S}$ consisting of $N \times M = L$ pixels, each pixel giving a spectrum evalutated at wavelenghts $w_1,\dots, w_S$. We assume that there are $P$ EMs in the HI, characterised by sets of vectors of parameters $\theta_1,\dots, \theta_P$.
 
-Since the dispersion model from CITE(JANICZEK) is adopted here, the parameters $\theta_p \in \mathbb{R}^{N \times M \times K \times 4}$ contain the physical parameters introduced in the previous section REF(SECTION), with different values for different pixels (for sake of lisibility, we define $T = K \times 4$ the number of parameters per EM).
+Since the dispersion model from \citet{janiczek_differentiable_2020} is adopted here, the parameters $\theta_p \in \mathbb{R}^{N \times M \times K \times 4}$ contain the physical parameters introduced in the previous section REF(SECTION), with different values for different pixels (for sake of lisibility, we define $T = K \times 4$ the number of parameters per EM).
 
 Then, the corresponding abundance map $A \in [0, 1]^{N \times M\times P}$ is such that $a_{i, j, p}$ is the abundance of EM $p$ in pixel $(i, j)$, and $\|A_{i, j, 1:P}\|_1 = 1$.
 
@@ -119,7 +119,7 @@ $$\Delta = [\rho_{min}, \rho_{max}] \times [\omega_{0, min}, \omega_{0, max}] \t
 
 As advertised earlier, our approach to model the SV is to let the physical parameters $\Theta$ of the EMs vary across the pixels of $B$. Yet, to keep a spatial consistency we want to ensure a smooth variation, to represent the idea that, as the environmental conditions are roughly continuous with respect to space dimensions, so are material states and signature spectra. For instance, the quantity of water received by a lawn is close to the one received by the adjacent grass. Obviously, this hypothesis is not always appropriate, as your neighbor might water his lawn way more than you; yet it should still be a relevant hypothesis in most real-world applications ADD CITATION.
 
-To do so, we consider the \emph{discrete gradient} operator, as in CITE(CONDAT2014). It consists in the horizontal and vertical differences between neighbour pixels, so that for an $N \times M$ image $Y$ we have:
+To do so, we consider the \emph{discrete gradient} operator, as in \citet{condat_generic_2014}. It consists in the horizontal and vertical differences between neighbour pixels, so that for an $N \times M$ image $Y$ we have:
 
 \begin{align*}\label{eq:discrete-grad}
   D(Y) &= (u_h (Y),\ u_v (Y)),\\
@@ -159,7 +159,7 @@ is the simplex where abundances live.
 
 However, constraints induce non-differentiability. To circumvent this issue, we propose to relax the constraint term into a smooth penalty term, so that we strongly encourage abundances to stay close the $\Upsilon$ while being differentiable.
 
-The idea is to strongly promote values close to $\Upsilon$ for $A$, thanks to an approximation to the indicator function. Such approach has already been presented and used in the literature, in the form of \emph{log-barrier method} ADD CITATION. In particular, we consider the \emph{log-barrier extension} introduced in CITE(Kervadec2020). This operator is convex, continuous and twice-differentiable, and is defined as follows, for some hyper-parameter $t > 0$:
+The idea is to strongly promote values close to $\Upsilon$ for $A$, thanks to an approximation to the indicator function. Such approach has already been presented and used in the literature, in the form of \emph{log-barrier method} ADD CITATION. In particular, we consider the \emph{log-barrier extension} introduced in \citet{kervadec_constrained_2020}. This operator is convex, continuous and twice-differentiable, and is defined as follows, for some hyper-parameter $t > 0$:
 $$\forall z\in \mathbb{R},\ \tilde\Psi_t (z) = \begin{cases} - \frac{1}{t} \log (-z) & \text{if } z \leq -\frac{1}{t^2}\\ tz - \frac{1}{t} \log(\frac{1}{t^2}) + \frac{1}{t} & \text{otherwise} \end{cases}$$
 
 The higher $t$, the better the quality of the approximation; however one should be cautious not to overwhelm the other terms in the problems - this is discussed the next section.
@@ -173,7 +173,7 @@ To translate the sum-to-one constraint on the abundances, we rewrite it as a sum
 
 Regarding the abundances, we whish to enforce sparsity of abundances in every pixel; we would rather have a few EMs in significant abundances than a lot of EMs in small quantities. This prior is often relevant in real-wolrd applications ADD CITATION.
 
-Common choices to do so are the $\ell_0$ count measure, the $\ell_1$ norm, or the $\ell_p \ (p<1)$ quasi-norm ADD CITATION. However, these terms are hard to handle during optimisation, as they introduce non-convexity and discontinuity. Hence, to keep once again our problem differentiable, we ressort to the SPOQ regularisation, introduced in CITE(Cherni2020). It gives a smooth approximation of $\ell_0$.
+Common choices to do so are the $\ell_0$ count measure, the $\ell_1$ norm, or the $\ell_p \ (p<1)$ quasi-norm ADD CITATION. However, these terms are hard to handle during optimisation, as they introduce non-convexity and discontinuity. Hence, to keep once again our problem differentiable, we ressort to the SPOQ regularisation, introduced in \citet{cherni_spoq_2020}. It gives a smooth approximation of $\ell_0$.
 
 For some hyper-parameters $p\in \, ]0, 2[$, $q\in \, [2, +\infty[$, and $(\alpha, \eta) \in \, ]0, +\infty [^2$, the SPOQ regularisation term is defined as follow, for any vector $x \in \mathbb{R}^N$:
 $$SPOQ(x) = \log \left( \frac{(\ell_{p,\alpha}^p (x) + \beta^p)^{1/p}}{\ell_{q,\eta} (x)} \right)$$
@@ -213,13 +213,13 @@ To wrap-up, the inclusion of our priors raised some major optimisation issues, d
 
 \section{Experiments}
 In order to validate our approach, we implemented it using \textsf{PyTorch} \footnote{https://pytorch.org/} with \textsf{Python 3.7}; the details can be found on GitHub \footnote{https://github.com/Javisty/spectral\_
-unmixing}. In this section we describe the data used, the evaluation process, and make some discussion and comparison with CITE(JANICZEK), before presenting and analysing the results.
+unmixing}. In this section we describe the data used, the evaluation process, and make some discussion and comparison with \citet{janiczek_differentiable_2020}, before presenting and analysing the results.
 
 \subsection{Experimental settings}
 \subsubsection{Datasets}
-Ideally we would experiment on multiple real-world datasets for which we have access to the ground-truth abundance map and EM parameters and signature spectra in addition to a 2D HI, however such data is very hard to obtain. Additionaly, we should compare our performances with the ones of CITE(JANICZEK). Hence we resort to one dataset used in CITE(JANICZEK) and one synthetically generated.
+Ideally we would experiment on multiple real-world datasets for which we have access to the ground-truth abundance map and EM parameters and signature spectra in addition to a 2D HI, however such data is very hard to obtain. Additionaly, we should compare our performances with the ones of \citet{janiczek_differentiable_2020}. Hence we resort to one dataset used in \citet{janiczek_differentiable_2020} and one synthetically generated.
 
-\textit{Feely et al. dataset \cite{feely}:} 90 samples of thermal emission spectra in the infrared for various minerals measured in the lab, over $830$ spectral channels. Ground truth was determined via optical petrography, and a labeled endmember library is provided, so that we have the true abundances for the $38$ EMs. Also, as the EMs are known minerals, we can already initialize the parameters $\Theta$ with physics-based values. CITE(JANICZEK) already tested the dispersion model on this data, so we want to compare how our additional priors will affect the results. Unfortunately, as the samples are actually independent pixels, we couldn't use spatial regularisation here.
+\textit{Feely et al. dataset \cite{feely}:} 90 samples of thermal emission spectra in the infrared for various minerals measured in the lab, over $830$ spectral channels. Ground truth was determined via optical petrography, and a labeled endmember library is provided, so that we have the true abundances for the $38$ EMs. Also, as the EMs are known minerals, we can already initialize the parameters $\Theta$ with physics-based values. \citeauthor{janiczek_differentiable_2020} already tested the dispersion model on this data, so we want to compare how our additional priors will affect the results. Unfortunately, as the samples are actually independent pixels, we couldn't use spatial regularisation here.
 
 \textit{Synthetic data \cite{thouvenin}:} synthetically generated data, with white Gaussian noise (SNR=15dB) and some random SV. The HIs have size $128 \times 64$, and are generated from $3$ or $6$ EMs for $413$ spectral channels. We are able to test all our priors on this dataset, yet it is important to note that the spectra have been generated independently between the pixels, so that our spatial smoothness priors doesn't hold here. The code is available on GitHub \footnote{https://github.com/pthouvenin/synthetic-hs-variability}.
 
@@ -231,17 +231,17 @@ To assess the performance of the approach, we use some common metrics in the lit
   RMSE(\widehat{A}) &= \frac{1}{N M P} \| \widehat{A} - \bar{A} \|_{\mathcal{F}}
 \end{align*}
 
-We shall as well compare those results with the ones of CITE(JANICZEK).
+We shall as well compare those results with the ones of \citet{janiczek_differentiable_2020}.
 
 \subsubsection{Compared methods:}
-This work applys the dispersion model in an other optimisation framework, in which we promote sparsity of abundances and spatial smoothness in a differentiable way. Then, we solve the problem with a classic gradient descent algorithm. Of course, the objective function is strongly not convex, yet as for CITE(JANICZEK) we rely on a good initialisation of the EM parameters to find a relevant minimum.
+This work applys the dispersion model in an other optimisation framework, in which we promote sparsity of abundances and spatial smoothness in a differentiable way. Then, we solve the problem with a classic gradient descent algorithm. Of course, the objective function is strongly not convex, yet as in \citet{janiczek_differentiable_2020} we rely on a good initialisation of the EM parameters to find a relevant minimum.
 
-On the other hand, in the reference paper they set their dispersion model in a mixed optimisation problem, between Alternating Minimization ADD CITATION and Block Coordinate Decent ADD CITATION. Indeed, in the analysis-by-synthesis at each iteration a full minimization is performed on the abundances by performing Sequential Least Squares Programming ADD CITATION, and then one step of gradient descent (Adam ADD CITATION) is done on the EM parameters.
+On the other hand, in the reference paper they set their dispersion model in a mixed optimisation problem, between Alternating Minimization ADD CITATION and Block Coordinate Decent ADD CITATION. Indeed, in the analysis-by-synthesis at each iteration a full minimization is performed on the abundances by performing Sequential Least Squares Programming ADD CITATION, and then one step of gradient descent (Adam \citep{kingma_adam_2017}) is done on the EM parameters.
 
 \subsubsection{Training and implementation details:}
 The final model has a lot of hyper-parameters to fix: number of EMs $P$, penalty factors $\delta, \zeta...$, $SPOQ$ and log-barrier ($p, \alpha, \nu...$), Adam parameters.
 
-The values for the SPOQ parameters were taken from CITE(SPOQ), Section II.B: $p=1/4$, $q=2$, $\alpha=7 \times 10^{-7}$, $\beta = 3 \times 10^{-3}$ and $\eta= 1 \times 10^{-1}$. Similarly, we imitated the approach described in CITE(KERVADEC) (Appendix, Section E) regarding the log-barrier extension $\nu$ hyper-parameter: it is initialised at 5, and is multiplicatively increased by a factor $1.1$ between each Adam step. The authors justify this choice by saying that in the early stages of optimisation, the model needs more relaxation with respect to the constraints, and the latters are gradually enforced as the algorithm converges. In practice, during the experiments we capped its value at $1/\nu^2 = 1 \times 10^{-3}$. Indeed, the loss rapidly explodes for bigger values of $\nu$, as the algorithm isn't able anymore to minimize both $H(\Theta, A)$ while respecting the constraints on $A$ with an ever greater precision.
+The values for the SPOQ parameters were taken from \citet{cherni_spoq_2020}, Section II.B: $p=1/4$, $q=2$, $\alpha=7 \times 10^{-7}$, $\beta = 3 \times 10^{-3}$ and $\eta= 1 \times 10^{-1}$. Similarly, we imitated the approach described in \citet{kervadec_constrained_2020} (Appendix, Section E) regarding the log-barrier extension $\nu$ hyper-parameter: it is initialised at 5, and is multiplicatively increased by a factor $1.1$ between each Adam step. The authors justify this choice by saying that in the early stages of optimisation, the model needs more relaxation with respect to the constraints, and the latters are gradually enforced as the algorithm converges. In practice, during the experiments we capped its value at $1/\nu^2 = 1 \times 10^{-3}$. Indeed, the loss rapidly explodes for bigger values of $\nu$, as the algorithm isn't able anymore to minimize both $H(\Theta, A)$ while respecting the constraints on $A$ with an ever greater precision.
 
 The Adam parameters used were a learning rate of $0.01$, and the standard values suggested by \textsf{PyTorch}\footnote{https://pytorch.org/docs/stable/generated/torch.optim.Adam.html}. The learning rate actually required some fine-tuning, as a too high value would cause the model to oscillate too much between a good reconstruction and an abundance map respecting the priors, while a low value gets the model stuck in a bad local minimum, preventing exploration.
 
@@ -249,7 +249,7 @@ Regarding the penalty factors, the values were chosen between $0.1$ and $1$. In 
 
 The number of epochs before convergence were around $70$ for the Feely dataset; on the synthetic one it changed a lot for different sets of hyper-parameters.
 
-Finally, as mentioned earlier the initialisation is an important aspect in this optimisation problem. For the Feely dataset, like CITE(JANICZEK) we initialised the physical parameters with the associated EM library, which gives reference values for the materials studied. The abundance map was initialised with a homogeneous repartition. Regarding the synthetic dataset, initialisation signatures were given, so that the parameters were set by fitting these signature spectra for each EM. An initial abundance map was provided as well.
+Finally, as mentioned earlier the initialisation is an important aspect in this optimisation problem. For the Feely dataset, like in \citet{janiczek_differentiable_2020} we initialised the physical parameters with the associated EM library, which gives reference values for the materials studied. The abundance map was initialised with a homogeneous repartition. Regarding the synthetic dataset, initialisation signatures were given, so that the parameters were set by fitting these signature spectra for each EM. An initial abundance map was provided as well.
 
 \subsection{Results and Discussion}
 Present result tables, images (ground truth/Janiczek/us), signatures (mean, max and min against ground truth and Janiczek).
@@ -268,9 +268,10 @@ While some work has already been done, there are still a lot of perspectives to 
 %\section*{References}
 
 % \bibliographystyle{IEEEtran}
-\bibliography{unmixing}
+\bibliography{unmixing,theory}
 
 
 \section{Appendix}
 
 \end{document}
+
