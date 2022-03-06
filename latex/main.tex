@@ -48,29 +48,66 @@ Hyperspectral Unmixing, Linear Unmixing, Differentiable Programming, Endmember S
 \end{keywords}
 
 \section{Introduction}
-\textbf{Context:} what is spectral unmixing, some applications (remote sensing)\\
-\textbf{Variability models:} quick description of explicit (additive/multiplicative), black-box (Deep) and physics models.\\
-\textbf{Contribution:} take advantage of the dispersion model, with more prior information (regularisation) than in Janiczek paper to obtain a more relevant model, while keeping a differentiable problem for an easier resolve (cf natural model is ugly).\\
+In many real-world applications such as astronomy \citep{kouyama2016}, remote sensing \citep{lu_2014} or mineral detection \citep{bandfield2002}, hyperspectral images (which consist of samples of electromagnetic spectra at various wavelengths) can put into evidence some key characteristics of the location monitored. In particular, it is commonly assumed that each physical material present in the scene, called endmember (EM), have its own signature spectrum, which contributes to the HI, depending on its proportion of presence in each pixel. Hence, recovering these characteristic signatures from HI leads to a precise description and detection of materials in a scene.
 
-\textbf{First draft:} In many real-world applications like space exploration, medicine, environment monitoring, mineral detection, hyperspectral images (HI) (consisting of samples of electromagnetic spectra at various wavelengths) can put into evidence some key characteristics of the location monitored. In particular, it is commonly supposed that each present EM have its own signature spectrum, which contributes to the HI depending on its abundance in each pixel. Hence, being able to unmix these characteristic signatures from HI leads to a precise detection of materials in a scene.
+However, despite the high spectral resolution of hyperspectral cameras, technical limits must be taken into account; for instance a limited spatial resolution or a varying luminosity can be expected. This implies that the pixels of a HI then contain mixtures of multiple EMs in varying abundances, and noise is injected into the measurement. That means that the signature spectra of EMs can vary spectrally and spatially. While many unmixing algorithms have already been proposed \citep{borsoi_spectral_2020}, the physics behind is often too complex to be fully modelled or the physical quantities at hand are unknown.
 
-However, despite the high spectral resolution of hyperspectral cameras, there are technical limits that must be taken into account; in particular low spatial resolution is to be expected, which leads to a mixture of EMs in each piel. While many unmixing algorithms already have been proposed, the physics behind is often too complex to be fully modelled.
+A first difficulty to handle is the spectral variability (SV): depending on the scene observed, an EM might have a signature different from a laboratory measurement. This kind of variability can even occurs locally, between pixels of a same HI, which actually question the hypothesis of one reference signature characteristic of one EM, rather than a class of signatures. Multiple factors can contribute to this variability, and we distinguish two kinds: intrisic and external. Intrisic variability is due to the natural differences of the EM samples across the HI (e.g. grass is greener on the other side because the neighbor water it) while external variability refers to the environment influence, like light and shade or the quality of the hyperspectral camera used.
 
-A first difficulty to handle is the SV: depending on the scene observed, an EM might have a different signature than what we were expecting from previous observations. This variability can even occurs locally, between pixels of a same HI, which actually question the hypothesis of one signature corresponding to one EM, rather than a class of signatures. Multiple factors can contribute to this variability, and we distinguish two kinds: intrisic and external. Intrisic variability is due to the natural differences of the EM samples across the HI (e.g. grass is greener on the other side because the neighbor water it) while external variability refers to the environment influence, like light and shade or the quality of the hyperspectral camera used.
+In the end, hyperspectral unmixing is very challenging task in that there are many unknowns and sources of variability, hence it requires prior information to regularize the problem and improve the inference process.
 
-In the end, the unmixing problem is a very complex one, and requires advanced technics to overcome the difficulties. We will present some of them in the following section.
+Linear Mixing Models \citep{LMM} are a classic approach to model mixture spectra as a linear combination of the reference signatures and the abundances, plus some noise. To handle spectral variability, different signatures across the pixels of the HI can be considered. Moreover, multiplicative \citep{veganzones2014} or additive \citep{johnson2013} variability of the spectra have been studied in the literature. An other approach is to perform a physical analysis of the context, to try to provide an explicit model of spectral variation \citep{janiczek_differentiable_2020,griffin2003}. And lately, Deep approaches have been tested \citep{borsoi_deep_2019}.\\
+
+\textbf{Contributions:}
+In this report, we propose to take advantage of the physics-based dispersion model introduced in \citet{janiczek_differentiable_2020} in order to perform spectral unmixing. More precisely, we incorporate important prior information about the elements of the problem (such as sparsity of the abundances or spatial smoothness for the EMs) that should improve the regularisation of the problem, and then we present a new formulation of the unmixing problem. Additionally and in the same fashion as in \citet{janiczek_differentiable_2020}, we keep the problem differentiable to exploit on-the-shelf algorithms, with automatic differentiation because of the complexity of the dispersion model. Finally, we run some experimentations on real-world and synthetic data, to validate the approach.\\
+
+The report is organised as follows. A brief summary of different approaches to endmember variability modelling is given in section REF(SECTION). Section REF(SECTION) is devoted to the formulation of the problem, introducing the a priori information considered to solve the problem. The algorithm used to address the resulting optimisation problem is briefly described in Section REF(SECTION). Experiments reported in Section REF(SECTION) propose a first validation of the approach on synthetic data. Conclusion and perspectives are finally reported in Section REF(SECTION).
 
 \section{Variability models}
-Review of the literature.
+In this section is presented a quick review of the literature on variability models for HI. In these applications, it is commonly assumed that the target mixture spectrum is a function of the signature spectra of the EMs present in the scene, and their abundances. Moreover, and we make this hypothesis in our contribution as well, the number of EMs is supposed to be known a priori - there exist many state-of-the-art algorithms to try to infer this information \citep{bioucas2008}. Now the following models are designed specifically to consider SV.
 
 \subsection{Generic explicit models}
-Learn variability from an a priori structure. Borsoi 2020
+The Linear Mixture Model (LMM) is defined as follows:
+$$y_n = M_0 a_n + z_n$$
+for a pixel $n$ of an HI. $M_0$ is a $S \times P$ matrix whose columns correspond to the signatures of the $P$ EMs, over the $L$ spectral channels, and $a_n$ is a $P$ vector, giving for each EM its abundance in the pixel (so that the elements of $a_n$ are non-negative and sum to $1$). $z_n$ is additive noise. The main culprit of this model that has been demonstrated is the proportion indeterminancy \citep{borsoi_spectral_2020}.
+
+To consider spatial variability of the EMs, often a varying matrix of signatures is studied:
+\begin{equation}\label{eq:LMM}
+  y_n = M_n a_n + z_n
+\end{equation}
+Now the signatures of the EMs depend on the pixel, hence on the spatial location. However, the difficulty is to express $M_n$. Multiple approaches have been proposed to do so. Some are based on spectral libraries, consisting on trying to match reference signatures to the observations. Others create such libraries directly from the image, using pure pixels (only one EM present) for instance.
 
 \subsection{Deep models}
-Learn variability model directly from data, using deep structures. Borsoi 2019 (generative), Hong 2021, Ozkan 2019 (convolution)
+While previous methods have shown good performances, they often depend on expensive and not always available previous informations about the EMs. Since the problem seems too complex to be described by simple models, the scientific community has designed Deep architextures, that could learn in a black-box manner the rules underlying spectral variability.
+
+In \citet{borsoi_deep_2019}, the authors train a Variational Auto-Encoder that learns a latent representation of EM signatures, which is then used in a classic LMM optimisation framework. In particular, this works is based on the smoothness of the latent space; we will use a similar hypothesis later on as well. Yet, the method once again requires a pure pixels or libraries for training.
+
+Another Deep approach is deployed in \citet{hong_endmember-guided_2021}: one neural network is used to learn a relevant representation of EMs signatures, and at the same time guide an unmixing network through weight sharing. Once again, this approach makes use of pure pixels in the HI. More interestingly, the networks use the convolution operation: the spatial correlation between pixels is used to perform unmixing.
+
+Finally, the work presented in \citet{feng_hyperspectral_2018} leverages matrix factorization with Deep networks. The observed HI is supposed to be decomposable as a successive multiplication of matrices, the last one being the abundance map, each previous matrix represented by a layer in the neural network. A major point of this approach is the addition of a sparsity penalty in the loss function: the factorization is supported by a sparsity regularization on the abundances.
+
+Thus, Deep approaches to generate variable signatures encounters some succes; however the training can be difficult, and often require prior information to converge to a good solution.
 
 \subsection{Physics-based models}\label{sec:dispersion}
-Rely on physics properties to infer (complex) models of variability. Try to keep it differentiable. Janiczek 2020.
+So far have been presented generic or Deep models for the variable signatures $M_n$ (\ref{eq:LMM}). An interesting observation is the use of prior information about the structure and behavior of the elements of the problem, to regularise and help the algorithm find a good solution.
+
+A last strategy to model the SV are physics-based models: an explicit description of the signatures derived from physical laws. This can be compared to the VAE, in that it is a mapping of signatures to a latent space of parameters controlling their generation, based on the current state.
+
+\citet{janiczek_differentiable_2020} presents such a model, the dispersion model, derived from the laws behind molecular vibration. Then the optimisation problem consist in infering the parameter values for each EM, and then generate the corresponding signature and unmix the target HI in accordance with the LMM model (\ref{eq:LMM}). One important property of the dispersion model is that it is differentiable, which allows for an easier optimisation algorithm.
+
+In the dispersion model, every EM is characterized by a set of parameters $\rho, \omega_0, \gamma, \epsilon_r \in \mathbb{R}^K$ (band strength, resonant frequency, frictional force, relative dielectric permeability), where $K$ is an hyper-parameter corresponding to the number of equations controlling the signature, and for every such equation ($k$) are involved $\rho_k, \omega_{0, k}, \gamma_k, \epsilon_{r, k}$ in a very complex - but differentiable - way. Then, the spectral emission of the Em can be computed for every wavelength $\omega$: $\widehat\epsilon(\theta; \omega)$, where $\theta$ is the matrix of parameters. We denote by $E(\theta_1, \dots, \theta_P) \in \mathbb{R}^{S \times P}$ the matrix whose columns contain the spectral signature over the $S$ wavelengths considered, for all $P$ EMs.
+
+Following the LMM (\ref{eq:LMM}), the authors formulates the unmixing problem as:
+\begin{equation}\label{eq:dispersion}
+  \argmin_{\theta_{min} < \theta < \theta_{max},\ a} \| b - E(\theta_1, \dots, \theta_P) a \|_2^2 + \lambda \| a \|_p
+\end{equation}
+where $b$ is the spectra at one pixel of the HI, $a$ is the vector of abundances (non-negative, sum to one), and a regularisation term to promote abundance sparsity with a pseudo-norm $p < 1$.
+
+The algorithm proposed, called \emph{Analysis-by-Synthesis}, solves (\ref{eq:dispersion}) for every pixel. To do so, an alternating-like minimisation is performed: at each iteration the objective function is minimized on $a$ only, then an gradient descent update of the parameters $\theta$ is done, using the chain rule to backpropagate the gradient up to the parameters (thanks to the differentiability of the dispersion model).
+
+To avoid falling into a bad local minimum, the authors support that a good initialisation is provided by fitting each EM separately to $b$. This abides by the sparsity assumption made on the abundances.
+
+In the end, the dispersion model seems to provide a good model for the EMs, and has the upside of being differentiable. However, no spatial correlation is used, and the alternating minimisation isn't justified theoretically. Hence, we come up with an other optimisation framework for performing hyperspectral unmixing with the dispersion model: the next section present it.
 
 
 \section{Problem statement}
