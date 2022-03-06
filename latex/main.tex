@@ -265,7 +265,7 @@ To assess the performance of the approach, we use some common metrics in the lit
 
 \begin{align*}
   aSAM(\widehat{E}) &= \frac{1}{N M P} \sum_{p=1}^P arccos \left( \frac{\widehat{\epsilon}_p^T\ \bar{\epsilon}_p}{\| \widehat{\epsilon}_p \|_2 \| \bar{\epsilon}_p \|_2} \right)\\
-  RMSE(\widehat{A}) &= \frac{1}{N M P} \| \widehat{A} - \bar{A} \|_{\mathcal{F}}
+  MSE(\widehat{A}) &= \frac{1}{N M P} \| \widehat{A} - \bar{A} \|_{\mathcal{F}}^2
 \end{align*}
 
 We shall as well compare those results with the ones of \citet{janiczek_differentiable_2020}.
@@ -289,6 +289,38 @@ The number of epochs before convergence were around $70$ for the Feely dataset; 
 Finally, as mentioned earlier the initialisation is an important aspect in this optimisation problem. For the Feely dataset, like in \citet{janiczek_differentiable_2020} we initialised the physical parameters with the associated EM library, which gives reference values for the materials studied. The abundance map was initialised with a homogeneous repartition. Regarding the synthetic dataset, initialisation signatures were given, so that the parameters were set by fitting these signature spectra for each EM. An initial abundance map was provided as well.
 
 \subsection{Results and Discussion}
+
+\begin{table}
+\centering
+\begin{tabular}{ccccc}
+{} & {\bf aSAM(E)} & {\bf RMSE(E)} & {\bf MSE(A)} & {\bf RE} \\
+\hline & \\[-1.5ex]
+EM 1 & 0.337 & 0.266 & 0.120 &  \\
+EM 2 & 0.634 & 0.430 & 0.163 &   \\
+EM 3 & 0.547 & 0.415 & 0.0122 &   \\
+EM 4 & 0.342 & 0.260 & 0.0112 &  \\
+EM 5 & 0.341 & 0.411 & 0.0112 &  \\
+EM 6 & 0.213 & 0.142 & 0.139 &  \\
+Average & 0.403 & 0.138 & 0.0766 & 0.907 \\
+\end{tabular}
+\caption{Results after 1000 epochs on the synthetic dataset with 6 endmembers.}
+\label{table:results-6}
+\end{table}
+
+\begin{figure*}[!t]
+    \centering
+    \includegraphics[width=\textwidth]{pictures/abundance_maps.png}
+    \caption{Truth, initial and predicted abundance maps for top, middle and bottom rows respectively. Each }
+    \label{fig:ab_maps}
+\end{figure*}
+
+\begin{figure*}[!t]
+    \centering
+    \includegraphics[width=\textwidth]{pictures/spectral_variab.png}
+    \caption{Spatial spectral variability}
+    \label{fig:variab}
+\end{figure*}
+
 Present result tables, images (ground truth/Janiczek/us), signatures (mean, max and min against ground truth and Janiczek).
 
 
@@ -311,4 +343,3 @@ While some work has already been done, there are still a lot of perspectives to 
 \section{Appendix}
 
 \end{document}
-
