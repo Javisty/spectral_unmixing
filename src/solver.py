@@ -10,8 +10,8 @@ class AutogradDescent(nn.Module):
         """objective: model to minimize."""
         super().__init__()
         self.obj = objective
-        self.memory = dict({'RE': [], 'barrier': [], 'sparsity': [],
-                            'loss': []})
+        self.memory = {'RE': [], 'barrier': [], 'sparsity': [],
+                       'smoothness': [], 'loss': []}
 
     def fit(self, target, epochs=500, learning_rate=1e-4, betas=(0.9, 0.999)):
         """
@@ -38,7 +38,8 @@ class AutogradDescent(nn.Module):
         self.loss.backward(retain_graph=False)
         self.optimizer.step()
         self.apply_constraints()
-        self.obj.regu_A.barrier.increase_t()
+        if 1/self.obj.regu_A.barrier.t**2 > 1e-3:
+            self.obj.regu_A.barrier.increase_t()
 
     def forward(self):
         """Evaluate the objective at the current state."""
@@ -50,8 +51,12 @@ class AutogradDescent(nn.Module):
         memory['loss'].append(float(self.obj.forward()))
         memory['RE'].append(float(self.obj.reconstruction_error()))
         A = self.obj.A
-        memory['barrier'].append(float(self.obj.regu_A.barrier.forward(A)))
-        memory['sparsity'].append(float(self.obj.regu_A.spoq.forward(A)))
+        regu_A = self.obj.regu_A
+        memory['barrier'].append(float(regu_A.zeta * regu_A.barrier.forward(A)))
+        memory['sparsity'].append(float(regu_A.delta * regu_A.spoq.forward(A)))
+        pred = self.obj.predicted
+        regu_E = self.obj.regu_E
+        memory['smoothness'].append(float(regu_E.forward(pred)))
 
     def apply_constraints(self):
         """Apply constraints on parameters."""

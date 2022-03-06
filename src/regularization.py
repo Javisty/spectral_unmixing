@@ -211,16 +211,20 @@ def log_barrier_extension(z, t, f1, f2, where_, mask_fn):
 
 def smoothing(theta):
     """Compute the pseudo-TV smoothing term for parameters theta."""
-    S = theta.size()
+    S, device = theta.size(), theta.device
 
     h_diff = theta[:, 1:, :, :] - theta[:, :-1, :, :]
     v_diff = theta[1:, :, :, :] - theta[:-1, :, :, :]
 
     # Pad with zeros to restore dimension
-    h_diff = torch.cat((h_diff, torch.zeros((S[0], 1, S[2], S[3]))), dim=1)
-    v_diff = torch.cat((v_diff, torch.zeros((1, S[1], S[2], S[3]))), dim=0)
+    # h_diff = torch.cat((h_diff, torch.zeros((S[0], 1, S[2], S[3]), device=device)), dim=1)
+    # v_diff = torch.cat((v_diff, torch.zeros((1, S[1], S[2], S[3]), device=device)), dim=0)
 
-    return torch.sum(norm_1_2(h_diff, v_diff, dim=(0, 1))**2)
+    sub = norm_1_2(h_diff[:-1, :, :, :], v_diff[:, :-1, :, :], dim=(0, 1))**2
+    last_row = torch.sum(h_diff[-1, :, :, :].abs(), dim=0)**2
+    last_col = torch.sum(v_diff[:, -1, :, :].abs(), dim=0)**2
+
+    return torch.sum(sub) + torch.sum(last_row) + torch.sum(last_col)
 
 
 def norm_1_2(A, B, **kwargs):
@@ -230,4 +234,4 @@ def norm_1_2(A, B, **kwargs):
     """
     if A.size() != B.size():
         raise AttributeError("Tensors should have same size")
-    return torch.sum(torch.sqrt(A**2 + B**2), **kwargs)
+    return torch.sum(torch.sqrt(A**2 + B**2 + 0.00001), **kwargs)
