@@ -40,7 +40,7 @@
 \maketitle
 
 \begin{abstract}%
-  Hyperspectral unmixing is the task of infering the abundance of pure materials in an image from the observed spectra. The resulting spectrum indeed depends on some characteristical features of the End-Members (EMs), however this is a challenging problem because not only it is nonlinear, but also miscellaneous factors can change the output, which is known as Spectral Variability (SV). To tackle this problem, a paper \citep{janiczek_differentiable_2020} introduced a physics-based, differentiable model to realistically capture EM HV, and then used it in an optimisation framework in order to find promising results for spectral unmixing. However, while the dispersion model seems fruitful, the optimisation part raises questions. In the following is presented how we try to improve the unmixing process.
+  Hyperspectral unmixing consists in infering the proportion of presence (\emph{abundance}) and \emph{signatures} of pure materials composing an hyperspectral image, observed over hundreds of wavelengths. The spectra observed in each pixel indeed result from a mixture of several signatures, referrend to as \emph{endmembers}, which characterize the materials present in the observed scene. The problem is challenging in that it is not only non-linear, but can be further affected by multiple factors which can locally affect the shape of the endmembers, the so-called spectral variability. To tackle this problem, \citep{janiczek_differentiable_2020} introduced a physics-based, differentiable model to realistically capture endmembers. However, the approach investigated in CITE(JANICZEK) exploits none of the usual prior information commonly used in the literature (e.g. spatial smoothness, sparse abundances). In this project, we propose to extend this approach by considering additional regularization terms on both the abundances and the variability, and investigate their impact on unmixing quality.
 \end{abstract}
 
 \begin{keywords}
@@ -88,8 +88,8 @@ We consider a HI $B \in \mathbb{R}^{N \times M \times S}$ consisting of $N \time
 \subsubsection{Model of the hyperspectral image}
 
 In accordance to a commonly used approach in the literature ADD CITATION, we model the HI as follows:
-$$B = E(\Theta) \cdot A + \eta$$
-where $\eta$ is a white noise and $E(\Theta) \cdot A = \left( \sum_{p=1}^P E(\Theta)_{i,j,p,s} a_{i,j,p} \right)_{i,j,s}$ is the sum of the signature spectra weighted by abundances, for each pixel and spectral channel.
+$$B = E(\Theta) A + \eta$$
+where $\eta$ is a white noise and $E(\Theta) A = \left( \sum_{p=1}^P E(\Theta)_{i,j,p,s} a_{i,j,p} \right)_{i,j,s}$ is the sum of the signature spectra weighted by abundances, for each pixel and spectral channel.
 
 So far we just have reformulated the problem from \cite{janiczek_differentiable_2020}, however we wish to add prior information about the elements of the problem, as discussed in the following sections. This will be expressed by additional terms in the objective function. In the end, the optimisation problem states as:
 
@@ -97,7 +97,7 @@ So far we just have reformulated the problem from \cite{janiczek_differentiable_
   \label{eq:objective}
   \argmin_{\Theta \in \Delta,\ A \in \Upsilon} H(\Theta, A) + f(\Theta) + g(A)
 \end{equation}
-with $H(\Theta, A) = \frac{1}{2} \|B - E(\Theta) \cdot A\|_{F, 2}^2$, and $Upsilon$ and $\Delta$ are constraint spaces presented afterwards. The norm defined by $\|Q\|_{F, 2} = \sqrt{\sum_{1 \leq i \leq N,\\1 \leq j \leq M} \|Q_{i, j, 1:S}\|_2^2}$ is the Froebenius norm applied on the square norm over spectrum for every pixel. $f(\Theta)$ and $g(A) = g_c(A) + g_s(A)$ are regularisation terms, enforcing priors on the parameters.
+with $H(\Theta, A) = \frac{1}{2} \|B - E(\Theta) A\|_{F, 2}^2$, and $\Upsilon$ and $\Delta$ are constraint spaces presented afterwards. The norm defined by $\|Q\|_{F, 2} = \sqrt{\sum_{1 \leq i \leq N,\\1 \leq j \leq M} \|Q_{i, j, 1:S}\|_2^2}$ is the Froebenius norm applied on the square norm over spectrum for every pixel. $f(\Theta)$ and $g(A) = g_c(A) + g_s(A)$ are regularisation terms, enforcing priors on the parameters.
 
 This formulation corresponds to finding the maximum likelihood in presence of white noise, with respect to priors.
 
@@ -124,19 +124,19 @@ To do so, we consider the \emph{discrete gradient} operator, as in CITE(CONDAT20
 This operator is a measure of the absolute spatial variation of the pixel values, so in order to promote smoothness we want to keep these differences small. We quantify it with:
 
 \begin{align*}
-  \| D(Y) \|_{1,2}^2 = \sum_{i=1}^N \sum_{j=1}^M \sqrt{ u_h (Y_{x})[i, j]^2 + u_v (Y_x)[i, j]^2 }
+  \| D(Y) \|_{1,2} = \sum_{i=1}^N \sum_{j=1}^M \sqrt{ u_h (Y)[i, j]^2 + u_v (Y)[i, j]^2 }
 \end{align*}
 
 Finally, we enforce smoothness by minimizing the sum of the squared variations, so that the corresponding term is (for some penalty factor $\gamma >0$):
 
 \begin{align}\label{eq:f}
-  f(\Theta) &= \gamma \mathcal{L}(\Theta)\\
-  &= \gamma \sum_{t = 1}^{T} \sum_{p = 1}^P \| D(\Theta_{:,:,t}) \|_{1,2}^2
+  %f(\Theta) &= \gamma \mathcal{L}(\Theta)\\
+  f(\Theta) &= \gamma \sum_{t = 1}^{T} \sum_{p = 1}^P \| D(\Theta_{:,:,p,t}) \|_{1,2}^2
 \end{align}
 
 Note that one might prefer to ensure smoothness of the spectra rather than the parameters; we would then have:
 \begin{align*}
-  f(\Theta) &= \gamma \mathcal{L}(E(\Theta))
+  f(\Theta) &= \gamma \sum_{t = 1}^{T} \sum_{p = 1}^P \| D(E(\Theta_{:,:,p,t})) \|_{1,2}^2
 \end{align*}
 
 \subsection{Priors on the abundances}
@@ -228,7 +228,7 @@ To assess the performance of the approach, we use some common metrics in the lit
 We shall as well compare those results with the ones of CITE(JANICZEK).
 
 \subsubsection{Compared methods:}
-Our work consists in reusing the dispersion model from CITE(JANICZEK), and apply it in an other optimisation framework, in which we promote sparsity of abundances and spatial smoothness in a differentiable way. Then, we solve the problem with a classic gradient descent algorithm. Of course, the objective function is badly not convex, yet as for CITE(JANICZEK) we rely on a good initialisation of the EM parameters to find a relevant minimum.
+Our work consists in reusing the dispersion model from CITE(JANICZEK), and apply it in an other optimisation framework, in which we promote sparsity of abundances and spatial smoothness in a differentiable way. Then, we solve the problem with a classic gradient descent algorithm. Of course, the objective function is strongly not convex, yet as for CITE(JANICZEK) we rely on a good initialisation of the EM parameters to find a relevant minimum.
 
 On the other hand, in the reference paper they set their dispersion model in a mixed optimisation problem, between Alternating Minimization ADD CITATION and Block Coordinate Decent ADD CITATION. Indeed, in the analysis-by-synthesis at each iteration a full minimisation is performed on the abundances, and then one step of gradient descent (ADAM) is performed on the EM parameters.
 
