@@ -61,9 +61,9 @@ Linear Mixing Models \citep{LMM} are a classic approach to model mixture spectra
 \textbf{Contributions:}
 In this report, we propose to take advantage of the physics-based dispersion model introduced in \citet{janiczek_differentiable_2020} in order to perform spectral unmixing. More precisely, we incorporate important prior information about the elements of the problem (such as sparsity of the abundances or spatial smoothness for the EMs) that should improve the regularisation of the problem, and then we present a new formulation of the unmixing problem. Additionally and in the same fashion as in \citet{janiczek_differentiable_2020}, we keep the problem differentiable to exploit on-the-shelf algorithms, with automatic differentiation because of the complexity of the dispersion model. Finally, we run some experimentations on real-world and synthetic data, to validate the approach.\\
 
-The report is organised as follows. A brief summary of different approaches to endmember variability modelling is given in section REF(SECTION). Section REF(SECTION) is devoted to the formulation of the problem, introducing the a priori information considered to solve the problem. The algorithm used to address the resulting optimisation problem is briefly described in Section REF(SECTION). Experiments reported in Section REF(SECTION) propose a first validation of the approach on synthetic data. Conclusion and perspectives are finally reported in Section REF(SECTION).
+The report is organised as follows. A brief summary of different approaches to endmember variability modelling is given in Section \ref{sec:variab}. Section \ref{sec:prob} is devoted to the formulation of the problem, introducing the a priori information considered to solve the problem. The algorithm used to address the resulting optimisation problem is briefly described in Section \ref{sec:algo}. Experiments reported in Section \ref{sec:exp} propose a first validation of the approach on synthetic data. Conclusion and perspectives are finally reported in Section \ref{sec:conclu}.
 
-\section{Variability models}
+\section{Variability models}\label{sec:variab}
 In this section is presented a quick review of the literature on variability models for HI. In these applications, it is commonly assumed that the target mixture spectrum is a function of the signature spectra of the EMs present in the scene, and their abundances. Moreover, and we make this hypothesis in our contribution as well, the number of EMs is supposed to be known a priori - there exist many state-of-the-art algorithms to try to infer this information \citep{bioucas2008}. Now the following models are designed specifically to consider SV.
 
 \subsection{Generic explicit models}
@@ -110,7 +110,7 @@ To avoid falling into a bad local minimum, the authors support that a good initi
 In the end, the dispersion model seems to provide a good model for the EMs, and has the upside of being differentiable. However, no spatial correlation is used, and the alternating minimisation isn't justified theoretically. Hence, we come up with an other optimisation framework for performing hyperspectral unmixing with the dispersion model: the next section present it.
 
 
-\section{Problem statement}
+\section{Problem statement}\label{sec:prob}
 Based on the elements and observations we have seen so far, we come up with a formulation for the problems we are willing to tackle.
 
 \subsection{Reconstruction model}
@@ -130,7 +130,7 @@ Finally, $E(\theta_1,\dots, \theta_P) = E(\Theta) \in \mathbb{R}^{N \times M \ti
 
 \subsubsection{Model of the hyperspectral image}
 
-In accordance to a commonly used approach in the literature ADD CITATION, we model the HI as follows:
+In accordance to a commonly used approach in the literature (cf (\ref{eq:LMM}), we model the HI as follows:
 $$B = E(\Theta) A + Z$$
 where $Z$ is a white noise tensor and $E(\Theta) A \in \mathbb{R}^{N \times M \times S}$ is the sum of the signature spectra weighted by abundances, for every pixel and spectral channel.
 
@@ -154,7 +154,7 @@ $$\Delta = [\rho_{min}, \rho_{max}] \times [\omega_{0, min}, \omega_{0, max}] \t
 
 \subsubsection{Smoothness}\label{sec:EM-smoothness}
 
-As advertised earlier, our approach to model the SV is to let the physical parameters $\Theta$ of the EMs vary across the pixels of $B$. Yet, to keep a spatial consistency we want to ensure a smooth variation, to represent the idea that, as the environmental conditions are roughly continuous with respect to space dimensions, so are material states and signature spectra. For instance, the quantity of water received by a lawn is close to the one received by the adjacent grass. Obviously, this hypothesis is not always appropriate, as your neighbor might water his lawn way more than you; yet it should still be a relevant hypothesis in most real-world applications ADD CITATION.
+As advertised earlier, our approach to model the SV is to let the physical parameters $\Theta$ of the EMs vary across the pixels of $B$. Yet, to keep a spatial consistency we want to ensure a smooth variation, to represent the idea that, as the environmental conditions are roughly continuous with respect to space dimensions, so are material states and signature spectra. For instance, the quantity of water received by a lawn is close to the one received by the adjacent grass. Obviously, this hypothesis is not always appropriate, as your neighbor might water his lawn way more than you; yet it should still be a relevant hypothesis in most real-world applications.
 
 To do so, we consider the \emph{discrete gradient} operator, as in \citet{condat_generic_2014}. It consists in the horizontal and vertical differences between neighbour pixels, so that for an $N \times M$ image $Y$ we have:
 
@@ -196,7 +196,7 @@ is the simplex where abundances live.
 
 However, constraints induce non-differentiability. To circumvent this issue, we propose to relax the constraint term into a smooth penalty term, so that we strongly encourage abundances to stay close the $\Upsilon$ while being differentiable.
 
-The idea is to strongly promote values close to $\Upsilon$ for $A$, thanks to an approximation to the indicator function. Such approach has already been presented and used in the literature, in the form of \emph{log-barrier method} ADD CITATION. In particular, we consider the \emph{log-barrier extension} introduced in \citet{kervadec_constrained_2020}. This operator is convex, continuous and twice-differentiable, and is defined as follows, for some hyper-parameter $t > 0$:
+The idea is to strongly promote values close to $\Upsilon$ for $A$, thanks to an approximation to the indicator function. Such approach has already been presented and used in the literature, in the form of \emph{log-barrier method}. In particular, we consider the \emph{log-barrier extension} introduced in \citet{kervadec_constrained_2020}. This operator is convex, continuous and twice-differentiable, and is defined as follows, for some hyper-parameter $t > 0$:
 $$\forall z\in \mathbb{R},\ \tilde\Psi_t (z) = \begin{cases} - \frac{1}{t} \log (-z) & \text{if } z \leq -\frac{1}{t^2}\\ tz - \frac{1}{t} \log(\frac{1}{t^2}) + \frac{1}{t} & \text{otherwise} \end{cases}$$
 
 The higher $t$, the better the quality of the approximation; however one should be cautious not to overwhelm the other terms in the problems - this is discussed the next section.
@@ -208,9 +208,9 @@ To translate the sum-to-one constraint on the abundances, we rewrite it as a sum
 
 \subsubsection{Sparsity}
 
-Regarding the abundances, we whish to enforce sparsity of abundances in every pixel; we would rather have a few EMs in significant abundances than a lot of EMs in small quantities. This prior is often relevant in real-wolrd applications ADD CITATION.
+Regarding the abundances, we whish to enforce sparsity of abundances in every pixel; we would rather have a few EMs in significant abundances than a lot of EMs in small quantities. This prior is often relevant in real-wolrd applications.
 
-Common choices to do so are the $\ell_0$ count measure, the $\ell_1$ norm, or the $\ell_p \ (p<1)$ quasi-norm ADD CITATION. However, these terms are hard to handle during optimisation, as they introduce non-convexity and discontinuity. Hence, to keep once again our problem differentiable, we ressort to the SPOQ regularisation, introduced in \citet{cherni_spoq_2020}. It gives a smooth approximation of $\ell_0$.
+Common choices to do so are the $\ell_0$ count measure, the $\ell_1$ norm, or the $\ell_p \ (p<1)$ quasi-norm \citep{natarajan1995}. However, these terms are hard to handle during optimisation, as they introduce non-convexity and discontinuity. Hence, to keep once again our problem differentiable, we ressort to the SPOQ regularisation, introduced in \citet{cherni_spoq_2020}. It gives a smooth approximation of $\ell_0$.
 
 For some hyper-parameters $p\in \, ]0, 2[$, $q\in \, [2, +\infty[$, and $(\alpha, \eta) \in \, ]0, +\infty [^2$, the SPOQ regularisation term is defined as follow, for any vector $x \in \mathbb{R}^N$:
 $$SPOQ(x) = \log \left( \frac{(\ell_{p,\alpha}^p (x) + \beta^p)^{1/p}}{\ell_{q,\eta} (x)} \right)$$
@@ -231,10 +231,10 @@ In the end, we define the sparsity term on abundances as (with $\delta > 0$ a pe
 It simply is a sum of the SPOQ norms over the pixels.
 
 \subsubsection{Smoothness}
-Finally, one could also require the abundances to vary smoothly across space. Hence, in a similar way to Section \ref{sec:EM-smoothness}, we could add a $\beta \mathcal{L}(A)$ term to the regularisation on abundances. We will not consider it here though, for simplicity and because we value the sparsity prior more.
+Finally, one could also require the abundances to vary smoothly across space. Hence, in a similar way to (\ref{eq:dispersion}), we could add a $\beta \mathcal{L}(A)$ term to the regularisation on abundances. We will not consider it here though, for simplicity and because we value the sparsity prior more.
 
 
-\section{Inference algorithm}
+\section{Inference algorithm}\label{sec:algo}
 
 The optimisation problem presented in (\ref{eq:objective}) is composed of one differentiable, non-convex block $H(\Theta, A) + f(\Theta)$ and one non-convex, non-continuous block $\delta\|A\|_{1,0} + \iota_\Upsilon (A)$, and deal with two vectors of parameters $\Theta$ and $A$.
 
@@ -242,13 +242,13 @@ The first alternative to non-differentiability is to use Moreau's proximal opera
 
 Related families of optimisation algorithms would be subgradient or bundle algorithms, unfortunately they do not seem to apply to our problem, mainly because of the non-convexity and the fact that in the constraint $\iota_\Upsilon$ on $A$, $\Upsilon$ is a simplex rather than a convex space.
 
-Hence, instead of testing such approaches without guarantees, we chose a Lagrangian-based method from Kervadec2020, using a \emph{log-barrier extension} to replace the constraint term for $A$. Then, thanks to Cherni2020 we approximate the sparsity term on $A$ with a smooth approximation, so that as written in (\ref{eq:general}) we put ourselves in a smooth context.
+Hence, instead of testing such approaches without guarantees, we chose a Lagrangian-based method from \citet{kervadec_constrained_2020}, using a \emph{log-barrier extension} to replace the constraint term for $A$. Then, thanks to \citet{cherni_spoq_2020} we approximate the sparsity term on $A$ with a smooth approximation, so that as written in (\ref{eq:objective}) we put ourselves in a smooth context.
 
-Finally, thanks to these rewritings we are able to do a Stochastic Gradient Descent-like optimisation with Adam-which has already shown to be an efficient approach for such problems. A discussion can be made on other Adam-like algorithms in a non-convex problem (cf Chen2019), yet we will stick to the classical Adam for simplicity reasons. In particular, we shall use the Autodiff feature from PyTorch rather than deriving by hand the awfully complex gradient of (\ref{eq:general}).
+Finally, thanks to these rewritings we are able to do a Stochastic Gradient Descent-like optimisation with Adam-which has already shown to be an efficient approach for such problems. A discussion can be made on other Adam-like algorithms in a non-convex problem (cf \citet{chen_convergence_2019}), yet we will stick to the classical Adam for simplicity reasons. In particular, we shall use the Autodiff feature from PyTorch rather than deriving by hand the awfully complex gradient of the dispersion model.
 
 To wrap-up, the inclusion of our priors raised some major optimisation issues, due to which we have been forced to resort to a sub-optimal approach. Hopefully, the behavior will still be good, thanks to the senseful priors and a good initialization provided by the dispersion model. On the other hand, Janiczek \emph{analysis-by-synthesis} consists in an alternating minimization of the reconstruction error, on the abundances and the physics parameters. The main difference with our approach is that the parameters (and then the signature spectrum) of EMs are assumed to be the same all accross the HI.
 
-\section{Experiments}
+\section{Experiments}\label{sec:exp}
 In order to validate our approach, we implemented it using \textsf{PyTorch} \footnote{https://pytorch.org/} with \textsf{Python 3.7}; the details can be found on GitHub \footnote{https://github.com/Javisty/spectral\_
 unmixing}. In this section we describe the data used, the evaluation process, and make some discussion and comparison with \citet{janiczek_differentiable_2020}, before presenting and analysing the results.
 
@@ -256,12 +256,12 @@ unmixing}. In this section we describe the data used, the evaluation process, an
 \subsubsection{Datasets}
 Ideally we would experiment on multiple real-world datasets for which we have access to the ground-truth abundance map and EM parameters and signature spectra in addition to a 2D HI, however such data is very hard to obtain. Additionaly, we should compare our performances with the ones of \citet{janiczek_differentiable_2020}. Hence we resort to one dataset used in \citet{janiczek_differentiable_2020} and one synthetically generated.
 
-\textit{Feely et al. dataset \cite{feely}:} 90 samples of thermal emission spectra in the infrared for various minerals measured in the lab, over $830$ spectral channels. Ground truth was determined via optical petrography, and a labeled endmember library is provided, so that we have the true abundances for the $38$ EMs. Also, as the EMs are known minerals, we can already initialize the parameters $\Theta$ with physics-based values. \citeauthor{janiczek_differentiable_2020} already tested the dispersion model on this data, so we want to compare how our additional priors will affect the results. Unfortunately, as the samples are actually independent pixels, we couldn't use spatial regularisation here.
+\textit{Feely et al. dataset \citep{feely}:} 90 samples of thermal emission spectra in the infrared for various minerals measured in the lab, over $830$ spectral channels. Ground truth was determined via optical petrography, and a labeled endmember library is provided, so that we have the true abundances for the $38$ EMs. Also, as the EMs are known minerals, we can already initialize the parameters $\Theta$ with physics-based values. \citeauthor{janiczek_differentiable_2020} already tested the dispersion model on this data, so we want to compare how our additional priors will affect the results. Unfortunately, as the samples are actually independent pixels, we couldn't use spatial regularisation here.
 
-\textit{Synthetic data \cite{thouvenin}:} synthetically generated data, with white Gaussian noise (SNR=15dB) and some random SV. The HIs have size $128 \times 64$, and are generated from $3$ or $6$ EMs for $413$ spectral channels. We are able to test all our priors on this dataset, yet it is important to note that the spectra have been generated independently between the pixels, so that our spatial smoothness priors doesn't hold here. The code is available on GitHub \footnote{https://github.com/pthouvenin/synthetic-hs-variability}.
+\textit{Synthetic data \citep{thouvenin}:} synthetically generated data, with white Gaussian noise (SNR=15dB) and some random SV. The HIs have size $128 \times 64$, and are generated from $3$ or $6$ EMs for $413$ spectral channels. We are able to test all our priors on this dataset, yet it is important to note that the spectra have been generated independently between the pixels, so that our spatial smoothness priors doesn't hold here. The code is available on GitHub \footnote{https://github.com/pthouvenin/synthetic-hs-variability}.
 
 \subsubsection{Evaluation criteria:}
-To assess the performance of the approach, we use some common metrics in the literature: aSAM (average Spectral Angle Mapper) and RMSE (Root Mean Square Error) for the EMs signature spectra, MSE for abundances (per EM and global) and the reconstruction error $H(\Theta, A)$.
+To assess the performance of the approach, we use some common metrics in the literature: aSAM (average Spectral Angle Mapper) and RMSE (Root Mean Square Error) for the EMs signature spectra, MSE for abundances (per EM and global) and the reconstruction error $H(\Theta, A)$ (RE).
 
 \begin{align*}
   aSAM(\widehat{E}) &= \frac{1}{N M P} \sum_{p=1}^P arccos \left( \frac{\widehat{\epsilon}_p^T\ \bar{\epsilon}_p}{\| \widehat{\epsilon}_p \|_2 \| \bar{\epsilon}_p \|_2} \right)\\
@@ -273,7 +273,7 @@ We shall as well compare those results with the ones of \citet{janiczek_differen
 \subsubsection{Compared methods:}
 This work applys the dispersion model in an other optimisation framework, in which we promote sparsity of abundances and spatial smoothness in a differentiable way. Then, we solve the problem with a classic gradient descent algorithm. Of course, the objective function is strongly not convex, yet as in \citet{janiczek_differentiable_2020} we rely on a good initialisation of the EM parameters to find a relevant minimum.
 
-On the other hand, in the reference paper they set their dispersion model in a mixed optimisation problem, between Alternating Minimization ADD CITATION and Block Coordinate Decent ADD CITATION. Indeed, in the analysis-by-synthesis at each iteration a full minimization is performed on the abundances by performing Sequential Least Squares Programming ADD CITATION, and then one step of gradient descent (Adam \citep{kingma_adam_2017}) is done on the EM parameters.
+On the other hand, in the reference paper they set their dispersion model in a mixed optimisation problem, between Alternating Minimization \citep{bolte_proximal_2014} and Block Coordinate Decent \citep{marecek2014}. Indeed, in the analysis-by-synthesis at each iteration a full minimization is performed on the abundances by performing Sequential Least Squares Programming \citep{kraft1988}, and then one step of gradient descent (Adam \citep{kingma_adam_2017}) is done on the EM parameters.
 
 \subsubsection{Training and implementation details:}
 The final model has a lot of hyper-parameters to fix: number of EMs $P$, penalty factors $\delta, \zeta...$, $SPOQ$ and log-barrier ($p, \alpha, \nu...$), Adam parameters.
@@ -307,24 +307,56 @@ Average & 0.403 & 0.138 & 0.0766 & 0.907 \\
 \label{table:results-6}
 \end{table}
 
-\begin{figure*}[!t]
+\begin{figure*}[]
     \centering
     \includegraphics[width=\textwidth]{pictures/abundance_maps.png}
-    \caption{Truth, initial and predicted abundance maps for top, middle and bottom rows respectively. Each }
+    \caption{Truth, initial and predicted abundance maps for top, middle and bottom rows respectively. Black means 0, white means 1.}
     \label{fig:ab_maps}
 \end{figure*}
 
-\begin{figure*}[!t]
+\begin{figure*}[]
     \centering
     \includegraphics[width=\textwidth]{pictures/spectral_variab.png}
-    \caption{Spatial spectral variability}
+    \caption{Spatial spectral variability. Signatures for every pixel are represented on the same figure, to visualise the variability. In blue are the predicted signatures, in red the true ones and the black line is the initial signature (same for all the pixels).}
     \label{fig:variab}
 \end{figure*}
 
-Present result tables, images (ground truth/Janiczek/us), signatures (mean, max and min against ground truth and Janiczek).
+\begin{table}
+\centering
+\begin{tabular}{ccccc}
+{} & {\bf aSAM(E)} & {\bf RMSE(E)} & {\bf MSE(A)} & {\bf RE} \\
+\hline & \\[-1.5ex]
+EM 1 & 0.00624 & 0.0773 & 0.009357 &  \\
+EM 2 & 0.00720 & 0.0945 & 0.0184 &   \\
+EM 3 & 0.00289 & 0.0394 & 0.00187 &   \\
+EM 4 & 0.00277 & 0.0361 & 5.29 &  \\
+EM 5 & 0.00673 & 0.0835 & 6.80 &  \\
+EM 6 & 0.00456 & 0.0569 & 4.31 &  \\
+Average & 0.00506 & 0.0451 & 0.00581 & 0.949 \\
+\end{tabular}
+\caption{Results after 70 epochs on 5 pixels of Feely's dataset, for 6 random endmembers among the 38. Since we don't have access to the ground truth, we compare with the predictions from \citet{janiczek_differentiable_2020}. The average results are computed for all the endmembers.}
+\label{table:results-f}
+\end{table}
+
+\begin{figure*}[]
+    \centering
+    \includegraphics[width=\textwidth]{pictures/spectral_variab_f.png}
+    \caption{Spatial spectral variability. Signatures for every pixel are represented on the same figure, to visualise the variability. In blue are the predicted signatures, in red the ones for \citet{janiczek_differentiable_2020} and the black line is the initial signature.}
+    \label{fig:variab-f}
+\end{figure*}
+
+In Table \ref{table:results-6}, Figures \ref{fig:ab_maps} and \ref{fig:variab} are presented the results against the ground truth for the synthetic dataset with 6 EMs, cropped to a $10 \times 10$ image. In Table \ref{table:results-f} and Figure \ref{fig:variab-f} are the results against \citet{janiczek_differentiable_2020} run on 5 pixels from Feely dataset.
+
+The results on the first experiment aren't good: in Table \ref{fig:ab_maps} a quick comparison of the evolution of the abundance map shows that sparsity isn't enforced, as a lot of small abundances were allowed to appear. Regarding the signatures displayed in Figure \ref{fig:variab}, it is clear that signatures haven't been able to evolve enough from the initialisation towards the target signatures, but at least we obtained a small spatial variability.
+
+On the other hand, the second experiment show similar results to \citet{janiczek_differentiable_2020} regarding the signatures, however the reconstruction is significantly worse.
+
+For the record, it is interesting to note that the experiments on the synthetic dataset with 3 EMs only yielded worse results than for 6 EMs. And Feely dataset is actually closely related to the physical derivation of the dispersion model, so the performance of the model here should not be considered as a general case. The initialisation in particular is too good.
+
+Overall, the approach hasn't prooved itself here. Yet, as disclaimed earlier, the lack of time to properly fine-tune the parameters might be a reason. For instance, the parameters for the sparsity were simply taken from the original paper without further consideration. Moreover, the final objective function (\ref{eq:objective}) feel very difficult to minimize, as the numerous terms conflict between each other. During the training process often there was one term dominating the optimisation; and as we saw in the figures the gradient descent has difficulties to move from the initialisation.
 
 
-\section{Conclusion}
+\section{Conclusion}\label{sec:conclu}
 
 This project presented a new approach to perform hyperspectral unmixing accounting for endmember variability. An explicit, physics-based model was combined with specific prior information on the elements of the problem, motivated by observations from the real world. This yielded a new formulation of the optimisation problem, that unfortunately wasn't differentiable. In order to take advantage of the great out-of-the-box and computationally efficient existing tools (automatic differentiation, GPU computing), and to bypass the difficulty of dealing directly with a complex model, we proposed a differentiable relaxation of the problem, along with a simple, classic algorithm to solve it. Furthermore, an implementation of the approach has been provided and is available online. Some experimentations were run to assess the relevance of the approach.
 
@@ -338,8 +370,5 @@ While some work has already been done, there are still a lot of perspectives to 
 
 % \bibliographystyle{IEEEtran}
 \bibliography{unmixing,theory}
-
-
-\section{Appendix}
 
 \end{document}
