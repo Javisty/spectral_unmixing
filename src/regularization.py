@@ -1,9 +1,8 @@
 """Define the regularization terms."""
 import torch
 import torch.nn as nn
-from maskedtensor import masked_tensor
-import numpy as np
 
+from .utils import NaNWhere
 
 class AbundanceRegularization(nn.Module):
     """Regularization on abundances."""
@@ -96,6 +95,7 @@ class LogBarrierExtensionAbundances(nn.Module):
         self.mu = increase_factor
         na_where = NaNWhere
 
+        # Rewrite the forward method to use self.condition as mask_fn
         @staticmethod
         def forward(ctx, x, f1, f2, mask_fn=self.condition):
             x_1 = x.detach().clone().requires_grad_(True)
@@ -114,8 +114,11 @@ class LogBarrierExtensionAbundances(nn.Module):
             ctx.y_2 = y_2
 
             return torch.where(mask, y_1, y_2)
+
         na_where.forward = forward
 
+        # The equivalent of torch.where to use for backpropagation
+        # See function self.log_barrier_extension for further explanations
         self.nan_where = na_where.apply
 
     def increase_t(self):
@@ -123,16 +126,39 @@ class LogBarrierExtensionAbundances(nn.Module):
         self.t = self.t * self.mu
 
     def condition(self, x):
+        """Condition to know where to apply f1 or f2."""
         return x <= -1/self.t**2
 
     def f1(self, x):
+        """Left part of the log-barrier extension function."""
         return -torch.log(-x) / self.t
 
     def f2(self, x):
+        """Right part of the log-barrier extension function."""
         return self.t * x - torch.log(1/self.t**2)/self.t + 1/self.t
 
     def log_barrier_extension(self, z):
         """Apply log-barrier extension function with parameter self.t."""
+        # /!\ torch.where backpropagates NaN gradients
+        # This is a known difficulty, see
+        # https://github.com/pytorch/pytorch/issues/23156
+
+        # Non-working use of torch.where
+        # return torch.where(z <= -1/t**2,
+        #                    -torch.log(-z) / t,
+        #                    t * z - torch.log(1/t**2)/t + 1/t)
+
+        # Try to use masked_tensor (didn't work)
+        # https://github.com/cpuhrsch/maskedtensor
+        # mask = (z <= -1/t**2)
+        # z_left = masked_tensor(z, mask, requires_grad=True)
+        # z_right = masked_tensor(z, ~mask, requires_grad=True)
+        # return torch.where(mask,
+        #                    -torch.log(-z_left) / t,
+        #                    t * z_right - torch.log(1/t**2)/t + 1/t)
+
+        # Work-around: define a custom where function, that is passed as argument
+        # See https://github.com/pytorch/pytorch/issues/52248
         return self.nan_where(z, self.f1, self.f2)
 
     def forward(self, A):
@@ -153,73 +179,17 @@ class LogBarrierExtensionAbundances(nn.Module):
         return positive + lt_1 + gt_1
 
 
-class NaNWhere(torch.autograd.Function):
-    '''
-    An adaptation of torch.where to situations like
-    output = torch.where(torch.isfinite(f1(x)), f1(x), f2(x))
-    where the point of torch.where is to mask out invalid application
-    of f1 to some elements of x and replace them with fallback values
-    provided by f2(x).
-    '''
-    @staticmethod
-    def forward(ctx, x, f1, f2, mask_fn=torch.isfinite):
-        x_1 = x.detach().clone().requires_grad_(True)
-        x_2 = x.detach().clone().requires_grad_(True)
-
-        with torch.enable_grad():
-            y_1 = f1(x_1)
-            y_2 = f2(x_2)
-
-        mask = mask_fn(x)
-
-        ctx.save_for_backward(mask)
-        ctx.x_1 = x_1
-        ctx.x_2 = x_2
-        ctx.y_1 = y_1
-        ctx.y_2 = y_2
-
-        return torch.where(mask, y_1, y_2)
-
-    @staticmethod
-    def backward(ctx, gout):
-        mask, = ctx.saved_tensors
-
-        torch.autograd.backward([ctx.y_1, ctx.y_2], [gout, gout])
-        gin = torch.where(mask, ctx.x_1.grad, ctx.x_2.grad)
-
-        return gin, None, None
-
-
-def log_barrier_extension(z, t, f1, f2, where_, mask_fn):
-    """
-    Log-barrier extension function applied on z for parameter t.
-
-    See paper arXiv:1904.04205v4 (Kervadec 2020)
-    """
-    # mask = (z <= -1/t**2)
-    # z_left = masked_tensor(z, mask, requires_grad=True)
-    # z_right = masked_tensor(z, ~mask, requires_grad=True)
-    # return torch.where(mask,
-    #                    -torch.log(-z_left) / t,
-    #                    t * z_right - torch.log(1/t**2)/t + 1/t)
-    return where_(z, f1, f2)
-
-    # return torch.where(z <= -1/t**2,
-    #                    -torch.log(-z) / t,
-    #                    t * z - torch.log(1/t**2)/t + 1/t)
-
-
 def smoothing(theta):
     """Compute the pseudo-TV smoothing term for parameters theta."""
-    S, device = theta.size(), theta.device
-
     h_diff = theta[:, 1:, :, :] - theta[:, :-1, :, :]
     v_diff = theta[1:, :, :, :] - theta[:-1, :, :, :]
 
+    # /!\ Breaks PyTorch computation graph
     # Pad with zeros to restore dimension
     # h_diff = torch.cat((h_diff, torch.zeros((S[0], 1, S[2], S[3]), device=device)), dim=1)
     # v_diff = torch.cat((v_diff, torch.zeros((1, S[1], S[2], S[3]), device=device)), dim=0)
 
+    # Deal separately  with inner values and edge values
     sub = norm_1_2(h_diff[:-1, :, :, :], v_diff[:, :-1, :, :], dim=(0, 1))**2
     last_row = torch.sum(h_diff[-1, :, :, :].abs(), dim=0)**2
     last_col = torch.sum(v_diff[:, -1, :, :].abs(), dim=0)**2
