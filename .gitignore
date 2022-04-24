@@ -7,7 +7,7 @@ latex/main.blg
 .pytest_cache/
 **__pycache__/
 poetry.lock
-*.ipynb
+# *.ipynb
 
 ### Emacs ###
 # -*- mode: gitignore; -*-
