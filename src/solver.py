@@ -15,15 +15,20 @@ class AutogradDescent(nn.Module):
         self.memory = {'RE': [], 'barrier': [], 'sparsity': [],
                        'smoothness': [], 'loss': []}
 
-    def fit(self, target, epochs=500, learning_rate=1e-4, betas=(0.9, 0.999)):
+    def fit(self, target, epochs=500, learning_rate=1e-4,
+            betas=(0.9, 0.999), epsilon=1e-3):
         """
         Train the model to fit the target Hyperspectral Image, using Adam descent.
 
         target (torch.Tensor of size (N, M, S)): hyperspectral image to fit
         epochs, learning_rate, betas: parameters for Adam
+        epsilon: precision level for log-barrier extension. We keep
+        1/t² < epsilon, to not constrain too much the problem and keep
+        reasonable gradients from the log-barrier extension.
         """
         self.target = target
         self.optimizer = Adam(self.parameters(), lr=learning_rate, betas=betas)
+        self.epsilon = epsilon
         self.save_state()
 
         for epoch in range(epochs):
@@ -40,7 +45,9 @@ class AutogradDescent(nn.Module):
         self.loss.backward(retain_graph=False)
         self.optimizer.step()
         self.apply_constraints()
-        if 1/self.obj.regu_A.barrier.t**2 > 1e-3:
+
+        # Increase log-barrier precision (up to a certain degree)
+        if 1/self.obj.regu_A.barrier.t**2 > self.epsilon:
             self.obj.regu_A.barrier.increase_t()
 
     def forward(self):
