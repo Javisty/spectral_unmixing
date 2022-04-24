@@ -10,6 +10,8 @@ class AutogradDescent(nn.Module):
         """objective: model to minimize."""
         super().__init__()
         self.obj = objective
+
+        # self.memory: contains various training history measures
         self.memory = {'RE': [], 'barrier': [], 'sparsity': [],
                        'smoothness': [], 'loss': []}
 
@@ -46,7 +48,15 @@ class AutogradDescent(nn.Module):
         return self.obj.forward()
 
     def save_state(self):
-        """Save various values during optimization."""
+        """
+        Save various values during optimization.
+
+        loss: the total loss (reconstruction error + regularisation)
+        RE: reconstruction error
+        barrier: the log-barrier extension loss
+        sparsity: the abundance sparsity (SPOQ) loss
+        smoothness: the parameters smoothness loss
+        """
         memory = self.memory
         memory['loss'].append(float(self.obj.forward()))
         memory['RE'].append(float(self.obj.reconstruction_error()))
